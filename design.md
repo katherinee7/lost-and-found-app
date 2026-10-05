@@ -284,6 +284,7 @@ kinds, participants, or confirmations are queries over concept state.
 
 ### 1. Register reports for matching
 
+```text
 when
   Requesting.submitReport(session, kind, attributes, title)
 where
@@ -293,11 +294,13 @@ then
     returns report
   Matching.register(report, A if kind is missing otherwise B,
     attributes)
+```
 
 Missing reports use group A and found records use group B.
 
 ### 2. Search for potential owners
 
+```text
 when
   Requesting.searchForOwner(session, attributes)
 where
@@ -306,9 +309,11 @@ where
 then
   retrieve ItemReporting.summary(report) for each report
   respond with the summaries and report IDs
+```
 
 ### 3. Retrieve later matches
 
+```text
 when
   Requesting.viewMatches(session, foundReport)
 where
@@ -318,12 +323,14 @@ where
 then
   retrieve ItemReporting.summary(report) for each report
   respond with the summaries and report IDs
+```
 
 Matching maintains pairs when new reports appear, so saved found
 records can acquire matches later. Results are shown inside the app.
 
 ### 4. Connect a finder and owner
 
+```text
 when
   Requesting.contactOwner(session, missingReport, attributes)
 where
@@ -334,6 +341,7 @@ where
 then
   Messaging.create({finder, owner}) returns conversation
   respond with conversation
+```
 
 For subsequent message requests, authenticate the session and pass
 the resulting user to Messaging.send or Messaging.read. Messaging
@@ -341,6 +349,7 @@ requires that user to be a conversation participant.
 
 ### 5. Register and confirm a return
 
+```text
 when
   Requesting.beginReturn(session, missingReport, finder)
 where
@@ -350,11 +359,13 @@ where
   no contribution is registered for missingReport
 then
   ContributionRewarding.register(missingReport, finder, owner)
+```
 
 The owner selects the finder whose return they intend to acknowledge.
 The missing-report ID identifies the contribution, allowing at most
 one rewarded contribution per missing report.
 
+```text
 when
   Requesting.confirmReturn(session, missingReport)
 where
@@ -364,9 +375,11 @@ then
 
 ContributionRewarding accepts confirmations only from the registered
 participants and awards one point after both have confirmed.
+```
 
 ### 6. Close a jointly confirmed return
 
+```text
 when
   ContributionRewarding.confirm(user, missingReport)
 where
@@ -374,12 +387,14 @@ where
   missingReport is open and has author owner
 then
   ItemReporting.close(owner, missingReport)
+```
 
 Closing triggers removal from Matching through the reaction below.
 The finder can separately close their saved found record.
 
 ### 7. Keep matching consistent
 
+```text
 when
   ItemReporting.update(author, report, attributes, title)
 then
@@ -389,6 +404,7 @@ when
   ItemReporting.close(author, report)
 then
   Matching.remove(report)
+```
 
 ## Roles of Concepts
 
