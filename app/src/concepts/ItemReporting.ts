@@ -1,0 +1,173 @@
+import type { Collection, Db } from "mongodb";
+
+export class InvalidReport extends Error {}
+export class ReportUnavailable extends Error {}
+
+export const categories = [
+  "Electronics",
+  "Keys and cards",
+  "Clothing and accessories",
+  "Bags",
+  "Books and stationery",
+  "Bottles and containers",
+  "Other",
+];
+
+export interface Attributes {
+  category: string;
+  colors: string[];
+  brand: string;
+  start: string;
+  end: string;
+  locations: string[];
+}
+
+interface ReportDocument {
+  _id: string;
+  author: string;
+  title: string;
+  attributes: Attributes;
+  open: boolean;
+}
+
+function isObject(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function validStrings(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) &&
+    value.length <= 20 &&
+    value.every(
+      (entry) =>
+        typeof entry === "string" &&
+        entry.trim().length > 0 &&
+        entry.length <= 100,
+    )
+  );
+}
+
+export function validAttributes(
+  value: unknown,
+): value is Attributes {
+  if (!isObject(value)) return false;
+
+  return (
+    typeof value.category === "string" &&
+    categories.includes(value.category) &&
+    validStrings(value.colors) &&
+    validStrings(value.locations) &&
+    typeof value.brand === "string" &&
+    value.brand.length <= 100 &&
+    typeof value.start === "string" &&
+    typeof value.end === "string" &&
+    Number.isFinite(Date.parse(value.start)) &&
+    Number.isFinite(Date.parse(value.end)) &&
+    Date.parse(value.start) <= Date.parse(value.end)
+  );
+}
+
+export class ItemReportingConcept {
+  private readonly reports: Collection<ReportDocument>;
+
+  constructor(db: Db) {
+    this.reports =
+      db.collection<ReportDocument>("itemreporting.reports");
+  }
+
+  async create({
+    author,
+    title,
+    attributes,
+  }: {
+    author: string;
+    title: string;
+    attributes: Attributes;
+  }) {
+    if (
+      typeof title !== "string" ||
+      !title.trim() ||
+      title.length > 120 ||
+      !validAttributes(attributes)
+    ) {
+      throw new InvalidReport(
+        "Check the report fields and time interval.",
+      );
+    }
+
+    const report = crypto.randomUUID();
+
+    await this.reports.insertOne({
+      _id: report,
+      author,
+      title: title.trim(),
+      attributes: {
+        category: attributes.category,
+        colors: attributes.colors.map((color) => color.trim()),
+        brand: attributes.brand.trim(),
+        start: attributes.start,
+        end: attributes.end,
+        locations: attributes.locations.map(
+          (location) => location.trim(),
+        ),
+      },
+      open: true,
+    });
+
+    return { report };
+  }
+
+  async _own({ author }: { author: string }) {
+    const reports = await this.reports.find({ author }).toArray();
+
+    return reports.map(({ _id, title, attributes, open }) => ({
+      report: _id,
+      title,
+      attributes,
+      open,
+    }));
+  }
+
+  async close({
+    author,
+    report,
+  }: {
+    author: string;
+    report: string;
+  }) {
+    // Both conditions are checked in the database operation.
+    const result = await this.reports.updateOne(
+      { _id: report, author },
+      { $set: { open: false } },
+    );
+
+    if (result.matchedCount === 0) {
+      throw new ReportUnavailable("That report is unavailable.");
+    }
+
+    return { report };
+  }
+
+	async _summary({ report }: { report: string }) {
+		const found = await this.reports.findOne({
+			_id: report,
+			open: true,
+		});
+
+		if (!found) return [];
+
+		return [{
+			title: found.title,
+			category: found.attributes.category,
+			start: found.attributes.start,
+			end: found.attributes.end,
+			locations: found.attributes.locations,
+		}];
+	}
+}

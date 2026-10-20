@@ -1,3 +1,18 @@
+import reportingSpec from "../design/concepts/ItemReporting.md" with { type: "text" };
+
+import {
+  ItemReportingConcept,
+  InvalidReport,
+  ReportUnavailable,
+} from "./concepts/ItemReporting.ts";
+
+import matchingSpec from "../design/concepts/Matching.md" with { type: "text" };
+
+import {
+  MatchingConcept,
+  InvalidMatchAttributes,
+} from "./concepts/Matching.ts";
+
 import {
   conceptSet,
   registerConcept,
@@ -26,8 +41,26 @@ const authenticating = registerConcept({
   },
 });
 
+const itemReporting = registerConcept({
+  class: ItemReportingConcept,
+  spec: reportingSpec,
+  refusals: {
+    INVALID_REPORT: InvalidReport,
+    REPORT_UNAVAILABLE: ReportUnavailable,
+  },
+});
+
+const matching = registerConcept({
+  class: MatchingConcept,
+  spec: matchingSpec,
+  refusals: {
+    INVALID_MATCH_ATTRIBUTES: InvalidMatchAttributes,
+  },
+});
 export const applicationConceptSet = conceptSet({
   Authenticating: authenticating,
+  ItemReporting: itemReporting,
+  Matching: matching,
 });
 
 export const { concepts } = applicationConceptSet;

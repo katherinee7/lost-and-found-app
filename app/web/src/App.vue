@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import MyReports from "./components/MyReports.vue";
+import FindOwner from "./components/FindOwner.vue";
 
 const username = ref("");
 const password = ref("");
@@ -202,7 +204,17 @@ onMounted(async () => {
         </button>
       </nav>
 
-      <section>
+      <MyReports
+        v-if="page === 'My Reports'"
+        :session="session"
+      />
+
+      <FindOwner
+        v-else-if="page === 'Find an Owner'"
+        :session="session"
+      />
+
+      <section v-else>
         <h2>{{ page }}</h2>
         <p>This feature will be implemented next.</p>
       </section>
