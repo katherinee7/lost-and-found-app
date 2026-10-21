@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
+import { client } from "../client";
 
 const props = defineProps<{ session: string }>();
 
@@ -54,44 +55,15 @@ function splitValues(value: string) {
   ];
 }
 
-async function request(
-  path: string,
-  body: Record<string, unknown>,
-) {
-  const response = await fetch(`/api/reports/${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...body,
-      session: props.session,
-    }),
+async function load() {
+  const result = await client.reports.list({
+    session: props.session,
   });
 
-  const text = await response.text();
-
-  if (!text) {
-    throw new Error("The backend returned an empty response.");
+  if ("error" in result) {
+    throw new Error(`Could not load reports: ${result.error}`);
   }
 
-  const result = JSON.parse(text);
-
-  if (!response.ok || result.error) {
-    const errors: Record<string, string> = {
-      UNAUTHORIZED: "Your session is inactive. Log out and log in again.",
-      INVALID_REQUEST: "Check your fields and the time interval.",
-      NOT_FOUND: "That report is unavailable.",
-    };
-
-    throw new Error(
-      errors[result.error] ?? "The request failed. Please try again.",
-    );
-  }
-
-  return result;
-}
-
-async function load() {
-  const result = await request("list", {});
   reports.value = result.book.reports;
 }
 
@@ -113,17 +85,26 @@ async function submit() {
   busy.value = true;
 
   try {
-    await request("create", {
-      title: fields.title,
-      attributes: {
+    const result = await client.reports.create({
+    session: props.session,
+    title: fields.title,
+    attributes: {
         category: fields.category,
         colors: splitValues(fields.colors),
         brand: fields.brand,
         start: start.toISOString(),
         end: end.toISOString(),
         locations: splitValues(fields.locations),
-      },
+    },
     });
+
+    if ("error" in result) {
+    throw new Error(
+        result.error === "INVALID_REQUEST"
+        ? "Check the report fields and time interval."
+        : `Could not create report: ${result.error}`,
+    );
+    }
 
     // Reset the form after the report has been saved.
     fields.title = "";
@@ -149,7 +130,14 @@ async function closeReport(report: string) {
   message.value = "";
 
   try {
-    await request("close", { report });
+    const result = await client.reports.close({
+      session: props.session,
+      report,
+    });
+
+    if ("error" in result) {
+      throw new Error(`Could not close report: ${result.error}`);
+    }
     await load();
     message.value = "Report closed.";
   } catch (error) {

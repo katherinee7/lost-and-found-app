@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import MyReports from "./components/MyReports.vue";
 import FindOwner from "./components/FindOwner.vue";
 import Messages from "./components/Messages.vue";
+import { client } from "./client";
 
 const username = ref("");
 const password = ref("");
@@ -14,40 +15,6 @@ const message = ref("");
 const busy = ref(false);
 
 const pages = ["My Reports", "Find an Owner", "Messages"];
-
-async function request(
-  path: string,
-  body: Record<string, string>,
-): Promise<Record<string, unknown>> {
-  const response = await fetch(`/api${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok || result.error) {
-    if (result.error === "CONFLICT") {
-      throw new Error("That username is already taken.");
-    }
-
-    if (result.error === "UNAUTHORIZED") {
-      throw new Error("Incorrect credentials or an inactive session.");
-    }
-
-    if (result.error === "INVALID_REQUEST") {
-      throw new Error(
-        "Use a username with 3–32 letters, numbers, underscores, " +
-        "or hyphens, and a password with 8–128 characters.",
-      );
-    }
-
-    throw new Error("The request failed. Please try again.");
-  }
-
-  return result;
-}
 
 function clearSession() {
   session.value = "";
@@ -68,34 +35,52 @@ async function submit() {
     };
 
     if (mode.value === "register") {
-      await request("/auth/register", credentials);
+      const result = await client.auth.register(credentials);
+
+      if ("error" in result) {
+        throw new Error(
+          result.error === "CONFLICT"
+            ? "That username is already taken."
+            : result.error === "INVALID_REQUEST"
+              ? "Use a valid username and a password with 8–128 characters."
+              : `Registration failed: ${result.error}`,
+        );
+      }
+
       mode.value = "login";
       message.value = "Account created. You can now log in.";
     } else {
-      const result = await request("/auth/login", credentials);
+      const result = await client.auth.login(credentials);
 
-      if (typeof result.session !== "string") {
-        throw new Error("The server returned an invalid session.");
+      if ("error" in result) {
+        throw new Error(
+          result.error === "UNAUTHORIZED"
+            ? "The username or password is incorrect."
+            : `Login failed: ${result.error}`,
+        );
+      }
+
+      const current = await client.auth.current({
+        session: result.session,
+      });
+
+      if ("error" in current) {
+        throw new Error(
+          `Could not verify your session: ${current.error}`,
+        );
       }
 
       session.value = result.session;
-      sessionStorage.setItem("session", result.session);
-
-      const current = await request("/auth/current", {
-        session: session.value,
-      });
-
-      if (typeof current.user !== "string") {
-        throw new Error("The server returned an invalid user.");
-      }
-
       userId.value = current.user;
+      sessionStorage.setItem("session", result.session);
     }
   } catch (error) {
     if (mode.value === "login") clearSession();
 
     message.value =
-      error instanceof Error ? error.message : "Something went wrong.";
+      error instanceof Error
+        ? error.message
+        : "Something went wrong.";
   } finally {
     password.value = "";
     busy.value = false;
@@ -107,12 +92,25 @@ async function logout() {
   message.value = "";
 
   try {
-    await request("/auth/logout", { session: session.value });
+    const result = await client.auth.logout({
+      session: session.value,
+    });
+
+    if (
+      "error" in result &&
+      result.error !== "UNAUTHORIZED"
+    ) {
+      throw new Error(`Logout failed: ${result.error}`);
+    }
+
+    // An already-invalid session also leaves us logged out.
     clearSession();
     message.value = "You have logged out.";
   } catch (error) {
     message.value =
-      error instanceof Error ? error.message : "Logout failed.";
+      error instanceof Error
+        ? error.message
+        : "Logout failed.";
   } finally {
     busy.value = false;
   }
@@ -124,18 +122,28 @@ onMounted(async () => {
   busy.value = true;
 
   try {
-    const current = await request("/auth/current", {
+    const result = await client.auth.current({
       session: session.value,
     });
 
-    if (typeof current.user !== "string") {
-      throw new Error("Invalid session response.");
+    if ("error" in result) {
+      if (result.error === "UNAUTHORIZED") {
+        clearSession();
+        message.value = "Please log in again.";
+      } else {
+        message.value =
+          `Could not restore your session: ${result.error}`;
+      }
+
+      return;
     }
 
-    userId.value = current.user;
-  } catch {
-    clearSession();
-    message.value = "Please log in again.";
+    userId.value = result.user;
+  } catch (error) {
+    message.value =
+      error instanceof Error
+        ? error.message
+        : "Could not restore your session.";
   } finally {
     busy.value = false;
   }

@@ -4,7 +4,7 @@ import {
   onUnmounted,
   ref,
 } from "vue";
-import { api } from "../api";
+import { client } from "../client";
 
 const props = defineProps<{
   session: string;
@@ -37,7 +37,15 @@ let readVersion = 0;
 let timer: ReturnType<typeof setInterval> | undefined;
 
 async function loadList() {
-  const result = await api("/messages/list", props.session);
+  const result = await client.messages.list({
+    session: props.session,
+  });
+
+  if ("error" in result) {
+    throw new Error(
+      `Could not load conversations: ${result.error}`,
+    );
+  }
 
   if (!disposed) {
     conversations.value = result.book.conversations;
@@ -50,20 +58,27 @@ async function loadMessages() {
 
   const version = ++readVersion;
 
-  const result = await api(
-    "/messages/read",
-    props.session,
-    { conversation },
-  );
+  const result = await client.messages.read({
+    session: props.session,
+    conversation,
+  });
 
-  // Ignore a response if the user switched conversations meanwhile.
+  // Ignore responses for a screen or conversation we have left.
   if (
-    !disposed &&
-    version === readVersion &&
-    conversation === selected.value
+    disposed ||
+    version !== readVersion ||
+    conversation !== selected.value
   ) {
-    messages.value = result.messages;
+    return;
   }
+
+  if ("error" in result) {
+    throw new Error(
+      `Could not load messages: ${result.error}`,
+    );
+  }
+
+  messages.value = result.messages;
 }
 
 async function refresh() {
@@ -110,10 +125,19 @@ async function send() {
   error.value = "";
 
   try {
-    await api("/messages/send", props.session, {
-      conversation: selected.value,
-      text: draft.value,
+    const result = await client.messages.send({
+    session: props.session,
+    conversation: selected.value,
+    text: draft.value,
     });
+
+    if ("error" in result) {
+    throw new Error(
+        result.error === "INVALID_REQUEST"
+        ? "Messages must contain 1–2000 characters."
+        : `Could not send message: ${result.error}`,
+    );
+    }
 
     draft.value = "";
     await loadMessages();

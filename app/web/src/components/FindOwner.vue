@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
-import { api } from "../api";
+import { client } from "../client";
 
 const props = defineProps<{ session: string }>();
 
@@ -68,40 +68,26 @@ async function search() {
   busy.value = true;
 
   try {
-    const response = await fetch("/api/reports/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session: props.session,
-        attributes: {
-          category: fields.category,
-          colors: split(fields.colors),
-          brand: fields.brand,
-          start: start.toISOString(),
-          end: end.toISOString(),
-          locations: split(fields.locations),
-        },
-      }),
+    const result = await client.reports.search({
+      session: props.session,
+      attributes: {
+        category: fields.category,
+        colors: split(fields.colors),
+        brand: fields.brand,
+        start: start.toISOString(),
+        end: end.toISOString(),
+        locations: split(fields.locations),
+      },
     });
 
-    const text = await response.text();
-
-    if (!text) {
-      throw new Error("The backend returned an empty response.");
-    }
-
-    const result = JSON.parse(text);
-
-    if (!response.ok || result.error) {
-      if (result.error === "UNAUTHORIZED") {
-        throw new Error("Please log out and log in again.");
-      }
-
-      if (result.error === "INVALID_REQUEST") {
-        throw new Error("Check the search fields and time interval.");
-      }
-
-      throw new Error("Search failed. Please try again.");
+    if ("error" in result) {
+      throw new Error(
+        result.error === "UNAUTHORIZED"
+          ? "Please log out and log in again."
+          : result.error === "INVALID_REQUEST"
+            ? "Check the search fields and time interval."
+            : `Search failed: ${result.error}`,
+      );
     }
 
     matches.value = result.results.matches;
@@ -123,11 +109,18 @@ async function contactOwner(report: string) {
   message.value = "";
 
   try {
-    const result = await api(
-      "/messages/start",
-      props.session,
-      { report },
-    );
+    const result = await client.messages.start({
+      session: props.session,
+      report,
+    });
+
+    if ("error" in result) {
+      throw new Error(
+        result.error === "NOT_FOUND"
+          ? "That report is unavailable or belongs to you."
+          : `Could not start conversation: ${result.error}`,
+      );
+    }
 
     emit("contact", result.conversation);
   } catch (error) {
