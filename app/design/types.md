@@ -10,4 +10,7 @@ instantiate ItemReporting with
 
 instantiate Matching with
   Record is ItemReporting.Report
+
+instantiate Messaging with
+  User is Authenticating.User
 ```

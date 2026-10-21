@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import MyReports from "./components/MyReports.vue";
 import FindOwner from "./components/FindOwner.vue";
+import Messages from "./components/Messages.vue";
 
 const username = ref("");
 const password = ref("");
@@ -52,6 +53,8 @@ function clearSession() {
   session.value = "";
   userId.value = "";
   sessionStorage.removeItem("session");
+  selectedConversation.value = "";
+  page.value = "My Reports";
 }
 
 async function submit() {
@@ -137,6 +140,13 @@ onMounted(async () => {
     busy.value = false;
   }
 });
+
+const selectedConversation = ref("");
+
+function showConversation(conversation: string) {
+  selectedConversation.value = conversation;
+  page.value = "Messages";
+}
 </script>
 
 <template>
@@ -212,6 +222,14 @@ onMounted(async () => {
       <FindOwner
         v-else-if="page === 'Find an Owner'"
         :session="session"
+        @contact="showConversation"
+      />
+
+      <Messages
+        v-else-if="page === 'Messages'"
+        :session="session"
+        :user-id="userId"
+        :initial-conversation="selectedConversation"
       />
 
       <section v-else>

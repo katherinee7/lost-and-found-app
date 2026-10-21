@@ -170,4 +170,25 @@ export class ItemReportingConcept {
 			locations: found.attributes.locations,
 		}];
 	}
+
+	async contactTarget({
+		requester,
+		report,
+	}: {
+		requester: string;
+		report: string;
+	}) {
+		const found = await this.reports.findOne({
+			_id: report,
+			open: true,
+		});
+
+		if (!found || found.author === requester) {
+			throw new ReportUnavailable(
+				"That report is unavailable or belongs to you.",
+			);
+		}
+
+		return { owner: found.author };
+	}
 }

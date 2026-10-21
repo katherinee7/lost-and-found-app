@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
+import { api } from "../api";
 
 const props = defineProps<{ session: string }>();
 
@@ -112,6 +113,33 @@ async function search() {
     busy.value = false;
   }
 }
+
+const emit = defineEmits<{
+  contact: [conversation: string];
+}>();
+
+async function contactOwner(report: string) {
+  busy.value = true;
+  message.value = "";
+
+  try {
+    const result = await api(
+      "/messages/start",
+      props.session,
+      { report },
+    );
+
+    emit("contact", result.conversation);
+  } catch (error) {
+    message.value =
+      error instanceof Error
+        ? error.message
+        : "Could not start conversation.";
+  } finally {
+    busy.value = false;
+  }
+}
+
 </script>
 
 <template>
@@ -187,7 +215,12 @@ async function search() {
         <p>
           {{ match.locations.join(", ") || "Location unspecified" }}
         </p>
-        <p>Messaging will be added next.</p>
+        <button
+          :disabled="busy"
+          @click="contactOwner(match.report)"
+        >
+          Contact owner
+        </button>
       </article>
     </template>
   </section>

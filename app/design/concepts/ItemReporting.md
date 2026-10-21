@@ -57,6 +57,15 @@ close (author: User, report: Report) : returns (report: Report)
   then
     set its open flag to false
     returns report
+
+contactTarget (requester: User, report: Report) : returns (owner: User)
+  where report does not exist, is closed, or belongs to requester
+  then
+    refuses REPORT_UNAVAILABLE "That report is unavailable or belongs to you."
+  where report is open and belongs to another user
+  then
+    bind owner to the report's author
+    returns owner
 ```
 
 ## Queries

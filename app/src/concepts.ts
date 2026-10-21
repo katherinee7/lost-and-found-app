@@ -29,6 +29,15 @@ import {
   UnknownSession,
 } from "./concepts/Authenticating.ts";
 
+import messagingSpec from "../design/concepts/Messaging.md" with { type: "text" };
+
+import {
+  MessagingConcept,
+  InvalidParticipants,
+  InvalidMessage,
+  ConversationUnavailable,
+} from "./concepts/Messaging.ts";
+
 const authenticating = registerConcept({
   class: AuthenticatingConcept,
   spec,
@@ -57,10 +66,22 @@ const matching = registerConcept({
     INVALID_MATCH_ATTRIBUTES: InvalidMatchAttributes,
   },
 });
+
+const messaging = registerConcept({
+  class: MessagingConcept,
+  spec: messagingSpec,
+  refusals: {
+    INVALID_PARTICIPANTS: InvalidParticipants,
+    INVALID_MESSAGE: InvalidMessage,
+    CONVERSATION_UNAVAILABLE: ConversationUnavailable,
+  },
+});
+
 export const applicationConceptSet = conceptSet({
   Authenticating: authenticating,
   ItemReporting: itemReporting,
   Matching: matching,
+  Messaging: messaging,
 });
 
 export const { concepts } = applicationConceptSet;

@@ -6,6 +6,8 @@ import { composition as accountsComposition } from "./compositions/Accounts.ts";
 import { composition as reportsComposition } from "./compositions/Reports.ts";
 import { db } from "./db.ts";
 import { MatchingConcept } from "./concepts/Matching.ts";
+import { MessagingConcept } from "./concepts/Messaging.ts";
+import { composition as messagesComposition } from "./compositions/Messages.ts";
 
 export function assembleApplication() {
   return assemble({
@@ -14,10 +16,12 @@ export function assembleApplication() {
       Authenticating: new AuthenticatingConcept(db),
       ItemReporting: new ItemReportingConcept(db),
       Matching: new MatchingConcept(db),
+      Messaging: new MessagingConcept(db),
     },
     composition: {
       Accounts: accountsComposition,
       Reports: reportsComposition,
+      Messages: messagesComposition,
     },
   });
 }
