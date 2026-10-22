@@ -12,3 +12,7 @@ and coordinate the return of lost belongings.
 - [Roles of concepts](design.md#roles-of-concepts)
 - [UI sketches](design.md#ui-sketches)
 - [User journey](design.md#user-journey)
+
+## P2 Implementation
+
+- [Core user journey](p2.md)
