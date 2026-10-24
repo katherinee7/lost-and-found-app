@@ -1,7 +1,7 @@
 # Messages
 
 A signed-in user can [start a conversation](reaction:Messages.Start)
-with the author of an open report belonging to someone else.
+with the author of an open missing report belonging to someone else.
 The recipient is resolved by the backend from the report ID.
 
 Users can [list their conversations](reaction:Messages.List),

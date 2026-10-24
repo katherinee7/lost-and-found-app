@@ -22,9 +22,12 @@ export interface Attributes {
   locations: string[];
 }
 
+export type Kind = "missing" | "found";
+
 interface ReportDocument {
   _id: string;
   author: string;
+  kind?: Kind;
   title: string;
   attributes: Attributes;
   open: boolean;
@@ -84,13 +87,16 @@ export class ItemReportingConcept {
   async create({
     author,
     title,
+    kind,
     attributes,
   }: {
     author: string;
     title: string;
+    kind: Kind;
     attributes: Attributes;
   }) {
     if (
+      (kind !== "missing" && kind !== "found") ||
       typeof title !== "string" ||
       !title.trim() ||
       title.length > 120 ||
@@ -106,6 +112,7 @@ export class ItemReportingConcept {
     await this.reports.insertOne({
       _id: report,
       author,
+      kind,
       title: title.trim(),
       attributes: {
         category: attributes.category,
@@ -126,8 +133,9 @@ export class ItemReportingConcept {
   async _own({ author }: { author: string }) {
     const reports = await this.reports.find({ author }).toArray();
 
-    return reports.map(({ _id, title, attributes, open }) => ({
+    return reports.map(({ _id, title, kind, attributes, open }) => ({
       report: _id,
+      kind: kind ?? "missing",
       title,
       attributes,
       open,
@@ -154,41 +162,45 @@ export class ItemReportingConcept {
     return { report };
   }
 
-	async _summary({ report }: { report: string }) {
-		const found = await this.reports.findOne({
-			_id: report,
-			open: true,
-		});
+  async _summary({ report }: { report: string }) {
+    const found = await this.reports.findOne({
+      _id: report,
+      open: true,
+    });
 
-		if (!found) return [];
+    if (!found || (found.kind ?? "missing") !== "missing") return [];
 
-		return [{
-			title: found.title,
-			category: found.attributes.category,
-			start: found.attributes.start,
-			end: found.attributes.end,
-			locations: found.attributes.locations,
-		}];
-	}
+    return [{
+      title: found.title,
+      category: found.attributes.category,
+      start: found.attributes.start,
+      end: found.attributes.end,
+      locations: found.attributes.locations,
+    }];
+  }
 
-	async contactTarget({
-		requester,
-		report,
-	}: {
-		requester: string;
-		report: string;
-	}) {
-		const found = await this.reports.findOne({
-			_id: report,
-			open: true,
-		});
+  async contactTarget({
+    requester,
+    report,
+  }: {
+    requester: string;
+    report: string;
+  }) {
+    const found = await this.reports.findOne({
+      _id: report,
+      open: true,
+    });
 
-		if (!found || found.author === requester) {
-			throw new ReportUnavailable(
-				"That report is unavailable or belongs to you.",
-			);
-		}
+    if (
+      !found ||
+      (found.kind ?? "missing") !== "missing" ||
+      found.author === requester
+    ) {
+      throw new ReportUnavailable(
+        "That report is unavailable or belongs to you.",
+      );
+    }
 
-		return { owner: found.author };
-	}
+    return { owner: found.author };
+  }
 }

@@ -110,6 +110,7 @@ export type BacktrackWire = {
   "/reports/create": {
     input: {
       "attributes": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["create"]>[0], ["attributes"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["attributes"]>]>>;
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["create"]>[0], ["kind"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["create"]>[0], ["title"]>>;
     };
@@ -126,6 +127,7 @@ export type BacktrackWire = {
       "book": {
         "reports": {
           "attributes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["attributes"]>>;
+          "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["kind"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["open"]>>;
           "report": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["report"]>>;
           "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["title"]>>;
@@ -254,6 +256,7 @@ export type BacktrackWireHttp = {
   "/reports/create": {
     input: {
       "attributes": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["create"]>[0], ["attributes"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["attributes"]>]>>;
+      "kind": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["create"]>[0], ["kind"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
       "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["create"]>[0], ["title"]>>;
     };
@@ -270,6 +273,7 @@ export type BacktrackWireHttp = {
       "book": {
         "reports": {
           "attributes": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["attributes"]>>;
+          "kind": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["kind"]>>;
           "open": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["open"]>>;
           "report": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["report"]>>;
           "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_own"]>>>, ["title"]>>;

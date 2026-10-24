@@ -1,0 +1,43 @@
+bun test v1.4.2 (744846f84)
+
+tests/Matching.test.ts:
+(pass) matches compatible records and normalizes text [15.54ms]
+(pass) excludes incompatible characteristics [3.11ms]
+(pass) unspecified optional characteristics do not exclude matches [0.58ms]
+(pass) removing a record excludes it from search [2.66ms]
+(pass) rejects invalid time intervals [0.05ms]
+
+tests/Messaging.test.ts:
+(pass) participants can exchange messages in order [10.81ms]
+(pass) nonparticipants cannot read or send messages [2.20ms]
+(pass) lists only the user's conversations [3.25ms]
+(pass) messages persist across concept instances [1.70ms]
+(pass) rejects invalid messages [0.58ms]
+(pass) rejects conversations with yourself [0.03ms]
+(pass) rejects unknown conversation IDs [0.68ms]
+
+tests/Reports.test.ts:
+(pass) saved records are private, session-owned, persistent, and excluded from owner search [277.82ms]
+(pass) P2 documents remain missing, searchable, contactable and closable [278.77ms]
+(pass) invalid or unauthenticated requests cannot create, list or close records [147.22ms]
+
+tests/ItemReporting.test.ts:
+(pass) creates a report that persists across instances [7.71ms]
+(pass) another user cannot list or close the report [7.38ms]
+(pass) the author can close their report [7.78ms]
+(pass) rejects invalid report fields [0.67ms]
+(pass) found records persist privately and only their author can close them [6.87ms]
+(pass) legacy documents without kind behave as missing without a migration [7.11ms]
+(pass) invalid kinds and found record fields leave no records [0.75ms]
+
+tests/Authenticating.test.ts:
+(pass) register, log in, authenticate, and log out [118.39ms]
+(pass) rejects duplicate usernames [103.01ms]
+(pass) rejects incorrect credentials [104.43ms]
+(pass) rejects invalid registration inputs [0.09ms]
+(pass) rejects invented sessions [1.56ms]
+
+ 27 pass
+ 0 fail
+ 93 expect() calls
+Ran 27 tests across 5 files. [1220.00ms]

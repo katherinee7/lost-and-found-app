@@ -1,3 +1,4 @@
+import type { Db } from "mongodb";
 import { assemble } from "@mit-sdg/sync-engine/assembly";
 import { applicationConceptSet } from "./concepts.ts";
 import { AuthenticatingConcept } from "./concepts/Authenticating.ts";
@@ -9,14 +10,14 @@ import { MatchingConcept } from "./concepts/Matching.ts";
 import { MessagingConcept } from "./concepts/Messaging.ts";
 import { composition as messagesComposition } from "./compositions/Messages.ts";
 
-export function assembleApplication() {
+export function assembleApplication(database: Db = db) {
   return assemble({
     conceptSet: applicationConceptSet,
     instances: {
-      Authenticating: new AuthenticatingConcept(db),
-      ItemReporting: new ItemReportingConcept(db),
-      Matching: new MatchingConcept(db),
-      Messaging: new MessagingConcept(db),
+      Authenticating: new AuthenticatingConcept(database),
+      ItemReporting: new ItemReportingConcept(database),
+      Matching: new MatchingConcept(database),
+      Messaging: new MessagingConcept(database),
     },
     composition: {
       Accounts: accountsComposition,

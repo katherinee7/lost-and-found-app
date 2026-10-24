@@ -1,6 +1,7 @@
 import {
   afterAll,
   beforeAll,
+  beforeEach,
   expect,
   test,
 } from "bun:test";
@@ -34,6 +35,10 @@ beforeAll(async () => {
   await client.connect();
 });
 
+beforeEach(async () => {
+  await db.dropDatabase();
+});
+
 afterAll(async () => {
   try {
     await db.dropDatabase();
@@ -46,6 +51,7 @@ test("creates a report that persists across instances", async () => {
   const { report } = await reporting.create({
     author: "alex",
     title: "Missing calculator",
+    kind: "missing",
     attributes,
   });
 
@@ -55,6 +61,7 @@ test("creates a report that persists across instances", async () => {
   expect(own).toContainEqual({
     report,
     title: "Missing calculator",
+    kind: "missing",
     attributes,
     open: true,
   });
@@ -64,6 +71,7 @@ test("another user cannot list or close the report", async () => {
   const { report } = await reporting.create({
     author: "owner",
     title: "Private report",
+    kind: "missing",
     attributes,
   });
 
@@ -83,6 +91,7 @@ test("the author can close their report", async () => {
   const { report } = await reporting.create({
     author: "maya",
     title: "Missing headphones",
+    kind: "missing",
     attributes,
   });
 
@@ -106,7 +115,47 @@ test("rejects invalid report fields", async () => {
     },
   ]) {
     await expect(
-      reporting.create({ author: "alex", ...input }),
+      reporting.create({ author: "alex", kind: "missing", ...input }),
     ).rejects.toBeInstanceOf(InvalidReport);
   }
+});
+
+
+test("found records persist privately and only their author can close them", async () => {
+  const { report } = await reporting.create({ author: "finder", kind: "found", title: "Found calculator", attributes });
+  const restarted = new ItemReportingConcept(db);
+  expect(await restarted._own({ author: "finder" })).toEqual([
+    { report, kind: "found", title: "Found calculator", attributes, open: true },
+  ]);
+  expect(await reporting._own({ author: "stranger" })).toEqual([]);
+  expect(await reporting._summary({ report })).toEqual([]);
+  await expect(reporting.contactTarget({ requester: "stranger", report })).rejects.toBeInstanceOf(ReportUnavailable);
+  await expect(reporting.close({ author: "stranger", report })).rejects.toBeInstanceOf(ReportUnavailable);
+  expect((await reporting._own({ author: "finder" }))[0]?.open).toBe(true);
+  await reporting.close({ author: "finder", report });
+  await reporting.close({ author: "finder", report }); // Closing is idempotent.
+  expect(await reporting._own({ author: "finder" })).toEqual([
+    { report, kind: "found", title: "Found calculator", attributes, open: false },
+  ]);
+});
+
+test("legacy documents without kind behave as missing without a migration", async () => {
+  const { report } = await reporting.create({ author: "owner", kind: "missing", title: "Old calculator", attributes });
+  // Simulate the persisted P2 schema; all other fixture data comes from actions.
+  await db.collection("itemreporting.reports").updateOne({ _id: report }, { $unset: { kind: "" } });
+  expect((await reporting._own({ author: "owner" }))[0]?.kind).toBe("missing");
+  expect(await reporting._summary({ report })).toHaveLength(1);
+  expect(await reporting.contactTarget({ requester: "finder", report })).toEqual({ owner: "owner" });
+  await expect(reporting.contactTarget({ requester: "owner", report })).rejects.toBeInstanceOf(ReportUnavailable);
+  await reporting.close({ author: "owner", report });
+  expect(await reporting._summary({ report })).toEqual([]);
+  await expect(reporting.contactTarget({ requester: "finder", report })).rejects.toBeInstanceOf(ReportUnavailable);
+  expect((await reporting._own({ author: "owner" }))[0]?.kind).toBe("missing");
+});
+
+test("invalid kinds and found record fields leave no records", async () => {
+  await expect(reporting.create({ author: "finder", kind: "other" as "found", title: "Found item", attributes })).rejects.toBeInstanceOf(InvalidReport);
+  await expect(reporting.create({ author: "finder", kind: "found", title: " ", attributes })).rejects.toBeInstanceOf(InvalidReport);
+  await expect(reporting.create({ author: "finder", kind: "found", title: "Found item", attributes: { ...attributes, end: "bad" } })).rejects.toBeInstanceOf(InvalidReport);
+  expect(await reporting._own({ author: "finder" })).toEqual([]);
 });

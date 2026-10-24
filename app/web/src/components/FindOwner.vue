@@ -36,6 +36,7 @@ const matches = ref<Match[]>([]);
 const busy = ref(false);
 const searched = ref(false);
 const message = ref("");
+const saving = ref(false);
 
 function split(value: string) {
   return value
@@ -48,36 +49,36 @@ function formatTime(value: string) {
   return new Date(value).toLocaleString();
 }
 
-async function search() {
-  message.value = "";
-  matches.value = [];
-  searched.value = false;
-
+function currentAttributes() {
   const start = new Date(fields.start);
   const end = new Date(fields.end);
-
   if (
     !Number.isFinite(start.getTime()) ||
     !Number.isFinite(end.getTime()) ||
     start > end
   ) {
-    message.value = "Enter a valid possible loss-time interval.";
-    return;
+    throw new Error("Enter a valid possible loss-time interval.");
   }
+  return {
+    category: fields.category,
+    colors: split(fields.colors),
+    brand: fields.brand,
+    start: start.toISOString(),
+    end: end.toISOString(),
+    locations: split(fields.locations),
+  };
+}
 
+async function search() {
+  message.value = "";
+  matches.value = [];
+  searched.value = false;
   busy.value = true;
 
   try {
     const result = await client.reports.search({
       session: props.session,
-      attributes: {
-        category: fields.category,
-        colors: split(fields.colors),
-        brand: fields.brand,
-        start: start.toISOString(),
-        end: end.toISOString(),
-        locations: split(fields.locations),
-      },
+      attributes: currentAttributes(),
     });
 
     if ("error" in result) {
@@ -97,6 +98,33 @@ async function search() {
       error instanceof Error ? error.message : "Search failed.";
   } finally {
     busy.value = false;
+  }
+}
+
+async function saveForLater() {
+  busy.value = true;
+  saving.value = true;
+  message.value = "";
+  try {
+    const result = await client.reports.create({
+      session: props.session,
+      kind: "found",
+      title: `Found ${fields.category.toLowerCase()}`,
+      attributes: currentAttributes(),
+    });
+    if ("error" in result) {
+      throw new Error(
+        result.error === "INVALID_REQUEST"
+          ? "Check the item fields and time interval."
+          : `Could not save found record: ${result.error}`,
+      );
+    }
+    message.value = "Saved privately. Review or close it in My Reports → Saved found records.";
+  } catch (error) {
+    message.value = error instanceof Error ? error.message : "Could not save found record.";
+  } finally {
+    busy.value = false;
+    saving.value = false;
   }
 }
 
@@ -184,8 +212,12 @@ async function contactOwner(report: string) {
       </label>
 
       <button :disabled="busy">
-        {{ busy ? "Searching…" : "Search" }}
+        {{ busy && !saving ? "Searching…" : "Search" }}
       </button>
+      <button type="button" :disabled="busy" @click="saveForLater">
+        {{ saving ? "Saving…" : "Save for later" }}
+      </button>
+      <p>Save these characteristics privately to review later.</p>
     </form>
 
     <p role="status">{{ message }}</p>

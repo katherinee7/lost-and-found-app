@@ -43,6 +43,7 @@ const createInput: EndpointValidator = (value) =>
   typeof value.title === "string" &&
   value.title.trim().length > 0 &&
   value.title.length <= 120 &&
+  (value.kind === "missing" || value.kind === "found") &&
   validAttributes(value.attributes)
     ? { ok: true }
     : { ok: false, detail: "Check the report fields." };
@@ -76,6 +77,7 @@ const listOutput: EndpointValidator = (value) => {
       typeof entry.report === "string" &&
       typeof entry.title === "string" &&
       typeof entry.open === "boolean" &&
+      (entry.kind === "missing" || entry.kind === "found") &&
       validAttributes(entry.attributes),
   );
 
@@ -88,36 +90,37 @@ const OwnReports = former(
   "the authenticated user's reports",
   (
     { author },
-    { report, title, attributes, open },
+    { report, title, kind, attributes, open },
   ) =>
     form({
       reports: each(
         ItemReporting._own({ author }).is({
           report,
           title,
+          kind,
           attributes,
           open,
         }),
-      ).form({ report, title, attributes, open }),
+      ).form({ report, title, kind, attributes, open }),
     }),
 );
 
 const Create = endpoint(
   "/reports/create",
-  ({ session, author, title, attributes, report }) =>
-    receive({ session, title, attributes })
+  ({ session, author, title, kind, attributes, report }) =>
+    receive({ session, title, kind, attributes })
       .then(
         Authenticating.authenticate({ session })
           .responds({ user: author }),
       )
       .then(
-        ItemReporting.create({ author, title, attributes })
+        ItemReporting.create({ author, title, kind, attributes })
           .responds({ report }),
       )
       .then(Matching.register({ record: report, attributes }))
       .then(respond({ report })),
   {
-    input: { required: ["session", "title", "attributes"] },
+    input: { required: ["session", "title", "kind", "attributes"] },
     validators: {
       input: createInput,
       output: reportOutput,

@@ -17,6 +17,10 @@ and coordinate the return of lost belongings.
 
 - [Core user journey](p2.md)
 
+## P3 progress
+
+- [Saved found records and verification](p3.md)
+
 ## Setup and local development
 
 Use Bun 1.4.2 (the version pinned in all package manifests), Podman, and Node.js

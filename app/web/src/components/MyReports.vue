@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { client } from "../client";
 
 const props = defineProps<{ session: string }>();
@@ -16,6 +16,7 @@ interface Attributes {
 interface Report {
   report: string;
   title: string;
+  kind: "missing" | "found";
   attributes: Attributes;
   open: boolean;
 }
@@ -41,6 +42,10 @@ const fields = reactive({
 });
 
 const reports = ref<Report[]>([]);
+const selectedKind = ref<"missing" | "found">("missing");
+const visibleReports = computed(() =>
+  reports.value.filter((report) => report.kind === selectedKind.value),
+);
 const busy = ref(false);
 const message = ref("");
 
@@ -88,6 +93,7 @@ async function submit() {
     const result = await client.reports.create({
     session: props.session,
     title: fields.title,
+    kind: "missing",
     attributes: {
         category: fields.category,
         colors: splitValues(fields.colors),
@@ -228,12 +234,33 @@ onMounted(async () => {
 
     <p role="status">{{ message }}</p>
 
-    <h3>Your reports</h3>
+    <h3>Your records</h3>
+    <div role="group" aria-label="Record kind">
+      <button
+        :aria-pressed="selectedKind === 'missing'"
+        @click="selectedKind = 'missing'"
+      >
+        Missing reports
+      </button>
+      <button
+        :aria-pressed="selectedKind === 'found'"
+        @click="selectedKind = 'found'"
+      >
+        Saved found records
+      </button>
+    </div>
+    <p v-if="selectedKind === 'found'">
+      Save items from Find an Owner using Save for later. These records are private.
+    </p>
 
     <p v-if="busy">Loading or saving…</p>
-    <p v-else-if="reports.length === 0">You have no reports yet.</p>
+    <p v-else-if="visibleReports.length === 0">
+      {{ selectedKind === "found"
+        ? "You have no saved found records yet."
+        : "You have no missing reports yet." }}
+    </p>
 
-    <article v-for="report in reports" :key="report.report">
+    <article v-for="report in visibleReports" :key="report.report">
       <h4>{{ report.title }}</h4>
       <p>
         {{ report.attributes.category }} ·
@@ -256,7 +283,7 @@ onMounted(async () => {
         :disabled="busy"
         @click="closeReport(report.report)"
       >
-        Mark as returned / close report
+        {{ report.kind === "found" ? "Close found record" : "Mark as returned / close report" }}
       </button>
     </article>
   </section>
