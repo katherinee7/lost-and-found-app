@@ -19,7 +19,8 @@ and coordinate the return of lost belongings.
 
 ## P3 progress
 
-- [Saved found records, later matches, editing, and verification](p3.md)
+- [Features, interface polish, and verification](p3.md)
+- [UI design and screenshots](app/design/ui.md)
 
 ## Setup and local development
 

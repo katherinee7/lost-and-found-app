@@ -1,3 +1,4 @@
+import { ConversationLinkingConcept } from "./concepts/ConversationLinking.ts";
 import type { Db } from "mongodb";
 import { assemble } from "@mit-sdg/sync-engine/assembly";
 import { applicationConceptSet } from "./concepts.ts";
@@ -18,6 +19,7 @@ export function assembleApplication(database: Db = db) {
       ItemReporting: new ItemReportingConcept(database),
       Matching: new MatchingConcept(database),
       Messaging: new MessagingConcept(database),
+      ConversationLinking: new ConversationLinkingConcept(database),
     },
     composition: {
       Accounts: accountsComposition,

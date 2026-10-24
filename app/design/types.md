@@ -13,4 +13,9 @@ instantiate Matching with
 
 instantiate Messaging with
   User is Authenticating.User
+
+instantiate ConversationLinking with
+  User is Authenticating.User
+  Context is ItemReporting.Report
+  Conversation is Messaging.Conversation
 ```

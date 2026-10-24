@@ -8,10 +8,11 @@ import {
   each,
   form,
   former,
+  whether,
 } from "@mit-sdg/sync-engine/language";
 import { concepts } from "../concepts.ts";
 
-const { Authenticating, ItemReporting, Messaging } = concepts;
+const { Authenticating, ItemReporting, Messaging, ConversationLinking } = concepts;
 
 function object(
   value: unknown,
@@ -87,21 +88,29 @@ const listOutput: EndpointValidator = (value) =>
     (entry) =>
       object(entry) &&
       id(entry.conversation) &&
-      id(entry.other),
+      id(entry.other) &&
+      (entry.title === null || typeof entry.title === "string") &&
+      (entry.username === null || typeof entry.username === "string"),
   )
     ? { ok: true }
     : { ok: false, detail: "Expected conversations." };
 
 const ConversationList = former(
   "the authenticated user's conversations",
-  ({ user }, { conversation, other }) =>
+  ({ user }, { conversation, other, report, title, username }) =>
     form({
       conversations: each(
         Messaging._for({ user }).is({
           conversation,
           other,
         }),
-      ).form({ conversation, other }),
+      )
+        .where(
+          whether(ConversationLinking._context({ conversation }).is({ context: report })),
+          whether(ItemReporting._title({ report }).is({ title })),
+          whether(Authenticating._username({ user: other }).is({ username })),
+        )
+        .form({ conversation, other, title, username }),
     }),
 );
 
@@ -120,10 +129,10 @@ const Start = endpoint(
         }).responds({ owner }),
       )
       .then(
-        Messaging.create({
-          first: user,
-          second: owner,
-        }).responds({ conversation }),
+        ConversationLinking.resolve({ initiator: user, context: report }).responds({ conversation }),
+      )
+      .then(
+        Messaging.ensure({ conversation, first: user, second: owner }),
       )
       .then(respond({ conversation })),
   {

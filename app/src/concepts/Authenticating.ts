@@ -115,6 +115,11 @@ export class AuthenticatingConcept {
     return { user: existing.user };
   }
 
+  async _username({ user }: { user: string }) {
+    const found = await this.users.findOne({ _id: user }, { projection: { username: 1 } });
+    return found ? [{ username: found.username }] : [];
+  }
+
   async logout({ session }: { session: string }) {
     const result = await this.sessions.deleteOne({ _id: session });
 

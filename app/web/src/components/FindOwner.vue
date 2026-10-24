@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import { client } from "../client";
+import ReportFields from "./ReportFields.vue";
 
 const props = defineProps<{ session: string }>();
 
@@ -13,17 +14,8 @@ interface Match {
   locations: string[];
 }
 
-const categories = [
-  "Electronics",
-  "Keys and cards",
-  "Clothing and accessories",
-  "Bags",
-  "Books and stationery",
-  "Bottles and containers",
-  "Other",
-];
-
 const fields = reactive({
+  title: "",
   category: "Electronics",
   colors: "",
   brand: "",
@@ -37,6 +29,8 @@ const busy = ref(false);
 const searched = ref(false);
 const message = ref("");
 const saving = ref(false);
+const messageError = ref(false);
+const searching = ref(false);
 
 function split(value: string) {
   return value
@@ -71,8 +65,10 @@ function currentAttributes() {
 
 async function search() {
   message.value = "";
+  messageError.value = false;
   matches.value = [];
   searched.value = false;
+  searching.value = true;
   busy.value = true;
 
   try {
@@ -94,10 +90,12 @@ async function search() {
     matches.value = result.results.matches;
     searched.value = true;
   } catch (error) {
+    messageError.value = true;
     message.value =
       error instanceof Error ? error.message : "Search failed.";
   } finally {
     busy.value = false;
+    searching.value = false;
   }
 }
 
@@ -105,6 +103,7 @@ async function saveForLater() {
   busy.value = true;
   saving.value = true;
   message.value = "";
+  messageError.value = false;
   try {
     const result = await client.reports.create({
       session: props.session,
@@ -121,9 +120,11 @@ async function saveForLater() {
     }
     message.value = "Saved privately. Review or close it in My Reports → Saved found records.";
   } catch (error) {
+    messageError.value = true;
     message.value = error instanceof Error ? error.message : "Could not save found record.";
   } finally {
     busy.value = false;
+    searching.value = false;
     saving.value = false;
   }
 }
@@ -135,6 +136,7 @@ const emit = defineEmits<{
 async function contactOwner(report: string) {
   busy.value = true;
   message.value = "";
+  messageError.value = false;
 
   try {
     const result = await client.messages.start({
@@ -152,12 +154,14 @@ async function contactOwner(report: string) {
 
     emit("contact", result.conversation);
   } catch (error) {
+    messageError.value = true;
     message.value =
       error instanceof Error
         ? error.message
         : "Could not start conversation.";
   } finally {
     busy.value = false;
+    searching.value = false;
   }
 }
 
@@ -165,114 +169,42 @@ async function contactOwner(report: string) {
 
 <template>
   <section>
-    <h2>Find an Owner</h2>
-    <p>Describe the item you found to search missing-item reports.</p>
-
-    <form @submit.prevent="search">
-      <label>
-        Category
-        <select v-model="fields.category">
-          <option v-for="category in categories" :key="category">
-            {{ category }}
-          </option>
-        </select>
-      </label>
-
-      <label>
-        Colors, separated by commas (optional)
-        <input v-model="fields.colors" placeholder="Black, silver" />
-      </label>
-
-      <label>
-        Brand (optional)
-        <input v-model="fields.brand" maxlength="100" />
-      </label>
-
-      <p>
-        When might the owner have lost it? Use a broad interval if
-        you are unsure.
-      </p>
-
-      <label>
-        Earliest possible loss time
-        <input v-model="fields.start" type="datetime-local" required />
-      </label>
-
-      <label>
-        Latest possible loss time
-        <input v-model="fields.end" type="datetime-local" required />
-      </label>
-
-      <label>
-        Locations, separated by commas (optional)
-        <input
-          v-model="fields.locations"
-          placeholder="Library, Lecture hall"
-        />
-      </label>
-
-      <button :disabled="busy">
-        {{ busy && !saving ? "Searching…" : "Search" }}
-      </button>
-      <button type="button" :disabled="busy" @click="saveForLater">
-        {{ saving ? "Saving…" : "Save for later" }}
-      </button>
-      <p>Save these characteristics privately to review later.</p>
-    </form>
-
-    <p role="status">{{ message }}</p>
-
-    <template v-if="searched">
-      <h3>Potential owners</h3>
-
-      <p v-if="matches.length === 0">
-        No compatible missing reports found.
-      </p>
-
-      <article v-for="match in matches" :key="match.report">
-        <h4>{{ match.title }}</h4>
-        <p>{{ match.category }}</p>
-        <p>
-          {{ formatTime(match.start) }}
-          –
-          {{ formatTime(match.end) }}
-        </p>
-        <p>
-          {{ match.locations.join(", ") || "Location unspecified" }}
-        </p>
-        <button
-          :disabled="busy"
-          @click="contactOwner(match.report)"
-        >
-          Contact owner
-        </button>
-      </article>
-    </template>
+    <header class="page-heading">
+      <p class="eyebrow">Found something?</p>
+      <h2 tabindex="-1">Find an Owner</h2>
+      <p>Describe what you found. We’ll look for compatible missing reports without revealing their private details.</p>
+    </header>
+    <div class="workspace">
+      <section class="panel" aria-labelledby="finder-form-title">
+        <h3 id="finder-form-title">Describe the item</h3>
+        <p class="hint">Search now, or save the details to check for matches later.</p>
+        <form @submit.prevent="search" :aria-busy="busy">
+          <fieldset :disabled="busy"><legend class="sr-only">Found item characteristics</legend><ReportFields :fields="fields" :show-title="false" /></fieldset>
+          <div class="actions">
+            <button class="primary" :disabled="busy">{{ searching ? "Searching…" : "Search for owner" }}</button>
+            <button type="button" :disabled="busy" @click="saveForLater">{{ saving ? "Saving…" : "Save for later" }}</button>
+          </div>
+          <p class="hint">Saved records are private. Find them in My Reports → Saved found records.</p>
+        </form>
+        <p v-if="message" class="status" :class="{ error: messageError }" :role="messageError ? 'alert' : 'status'">{{ message }}</p>
+      </section>
+      <section aria-labelledby="results-heading" :aria-busy="searching">
+        <div class="section-heading"><h3 id="results-heading">Potential owners</h3><span v-if="searched" class="badge">{{ matches.length }} results</span></div>
+        <p v-if="searching" class="loading" role="status">Looking for compatible missing reports…</p>
+        <div v-else-if="!searched" class="empty-state"><strong>Your search starts here.</strong>Enter the item’s characteristics and search to see potential owners.</div>
+        <div v-else-if="matches.length === 0" class="empty-state"><strong>No matches right now.</strong>Save this item for later, then check your saved records when new reports arrive.</div>
+        <div v-else class="result-list">
+          <article v-for="match in matches" :key="match.report" class="record-card">
+            <div class="record-header"><h4>{{ match.title }}</h4><span class="badge">Missing</span></div>
+            <dl class="record-details">
+              <div><dt>Category</dt><dd>{{ match.category }}</dd></div>
+              <div><dt>Possible locations</dt><dd>{{ match.locations.join(", ") || "Unspecified" }}</dd></div>
+              <div class="wide"><dt>Possible loss interval</dt><dd>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</dd></div>
+            </dl>
+            <div class="actions"><button class="primary" :disabled="busy" :aria-label="`Contact owner about ${match.title}`" @click="contactOwner(match.report)">Contact owner</button></div>
+          </article>
+        </div>
+      </section>
+    </div>
   </section>
 </template>
-
-<style scoped>
-form,
-label {
-  display: grid;
-  gap: 8px;
-}
-
-form {
-  gap: 16px;
-}
-
-input,
-select {
-  padding: 10px;
-  font: inherit;
-  min-width: 0;
-}
-
-article {
-  border: 1px solid #888;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 16px 0;
-}
-</style>

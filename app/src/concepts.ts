@@ -1,3 +1,5 @@
+import linkingSpec from "../design/concepts/ConversationLinking.md" with { type: "text" };
+import { ConversationLinkingConcept } from "./concepts/ConversationLinking.ts";
 import reportingSpec from "../design/concepts/ItemReporting.md" with { type: "text" };
 
 import {
@@ -77,11 +79,14 @@ const messaging = registerConcept({
   },
 });
 
+const conversationLinking = registerConcept({ class: ConversationLinkingConcept, spec: linkingSpec });
+
 export const applicationConceptSet = conceptSet({
   Authenticating: authenticating,
   ItemReporting: itemReporting,
   Matching: matching,
   Messaging: messaging,
+  ConversationLinking: conversationLinking,
 });
 
 export const { concepts } = applicationConceptSet;

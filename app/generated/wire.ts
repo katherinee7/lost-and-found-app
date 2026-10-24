@@ -58,10 +58,12 @@ export type BacktrackWire = {
     };
     output: {
       "book": {
-        "conversations": {
-          "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["conversation"]>>;
-          "other": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["other"]>>;
-        }[];
+        "conversations": ({
+          "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["_context"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["conversation"]>]>>;
+          "other": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["other"]>]>>;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_title"]>>>, ["title"]>> | null;
+          "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_username"]>>>, ["username"]>> | null;
+        })[];
       };
     };
     error: { error: AppWideError | "INVALID_INPUT" | "UNKNOWN_SESSION" };
@@ -93,7 +95,7 @@ export type BacktrackWire = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
-      "conversation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["create"]>>, ["conversation"]>>;
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
     };
     error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PARTICIPANTS" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
   };
@@ -235,10 +237,12 @@ export type BacktrackWireHttp = {
     };
     output: {
       "book": {
-        "conversations": {
-          "conversation": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["conversation"]>>;
-          "other": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["other"]>>;
-        }[];
+        "conversations": ({
+          "conversation": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["_context"]>[0], ["conversation"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["conversation"]>]>>;
+          "other": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_username"]>[0], ["user"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["_for"]>>>, ["other"]>]>>;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_title"]>>>, ["title"]>> | null;
+          "username": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Authenticating"]["_username"]>>>, ["username"]>> | null;
+        })[];
       };
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
@@ -270,7 +274,7 @@ export type BacktrackWireHttp = {
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
-      "conversation": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Messaging"]["create"]>>, ["conversation"]>>;
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };

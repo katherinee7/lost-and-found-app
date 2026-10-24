@@ -25,9 +25,32 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 - `logout(session: Session) : returns (ended: Flag)`
   - Refuses `UNKNOWN_SESSION`: Please log in.
 
+#### Queries
+
+- `_username(user: User) : optional (username: String)`
+
 #### Instances
 
 - `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 6.
+
+### ConversationLinking
+
+Defined in [ConversationLinking](../design/concepts/ConversationLinking.md), line 1.
+
+#### Actions
+
+- `resolve(initiator: User, context: Context) : returns (conversation: Conversation)`
+
+#### Queries
+
+- `_context(conversation: Conversation) : optional (context: Context)`
+
+#### Instances
+
+- `ConversationLinking` — instance of `ConversationLinking` — [Application types](../design/types.md), line 17.
+  - `Context` is `ItemReporting.Report` — [Application types](../design/types.md), line 19.
+  - `Conversation` is `Messaging.Conversation` — [Application types](../design/types.md), line 20.
+  - `User` is `Authenticating.User` — [Application types](../design/types.md), line 18.
 
 ### ItemReporting
 
@@ -49,6 +72,7 @@ Defined in [ItemReporting](../design/concepts/ItemReporting.md), line 1.
 
 #### Queries
 
+- `_title(report: Report) : optional (title: String)`
 - `_own(author: User) : many (report: Report, title: String, kind: String, attributes: Attributes, open: Flag)`
 - `_summary(report: Report, requester: User) : optional (title: String, category: String, start: String, end: String, locations: Locations)`
 
@@ -83,6 +107,8 @@ Defined in [Messaging](../design/concepts/Messaging.md), line 1.
 #### Actions
 
 - `create(first: User, second: User) : returns (conversation: Conversation)`
+  - Refuses `INVALID_PARTICIPANTS`: Choose a different participant.
+- `ensure(conversation: Conversation, first: User, second: User) : returns (conversation: Conversation)`
   - Refuses `INVALID_PARTICIPANTS`: Choose a different participant.
 - `send(sender: User, conversation: Conversation, text: String) : returns (message: String)`
   - Refuses `INVALID_MESSAGE`: Messages must contain 1–2000 characters.
@@ -126,15 +152,20 @@ Former "limited summaries of compatible open reports" — inputs (attributes, us
 ### the authenticated user's conversations
 
 Authored path: `Messages.ConversationList`.
-- Covered by [Messages](../design/compositions/Messages.md), line 14.
+- Covered by [Messages](../design/compositions/Messages.md), line 28.
 
 ```former
-Former "the authenticated user's conversations" — inputs (user); bindings (conversation, other); promises exactly one record — forms:
+Former "the authenticated user's conversations" — inputs (user); bindings (conversation, other, report, title, username); promises exactly one record — forms:
   a record of
     conversations: each Messaging._for (user) has (conversation, other)
+      where whether ConversationLinking._context (conversation) has (context: report)
+      where whether ItemReporting._title (report) has (title)
+      where whether Authenticating._username (user: other) has (username)
       form a record of
         conversation
         other
+        title
+        username
 ```
 
 ### the authenticated user's reports
@@ -284,7 +315,7 @@ then
 
 Authored path: `Messages.List`.
 - Covered by [Messages](../design/compositions/Messages.md), line 7.
-- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 46.
 
 ```reaction
 when RequestBoundary.request (path: "/messages/list", requestId, session)
@@ -296,7 +327,7 @@ then
 
 Authored path: `Messages.List`.
 - Covered by [Messages](../design/compositions/Messages.md), line 7.
-- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 46.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.List
@@ -310,7 +341,7 @@ then
 
 Authored path: `Messages.Read`.
 - Covered by [Messages](../design/compositions/Messages.md), line 8.
-- Covered by [Messages](../design/compositions/Messages.md), line 23.
+- Covered by [Messages](../design/compositions/Messages.md), line 47.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/messages/read", requestId, session)
@@ -322,7 +353,7 @@ then
 
 Authored path: `Messages.Read`.
 - Covered by [Messages](../design/compositions/Messages.md), line 8.
-- Covered by [Messages](../design/compositions/Messages.md), line 23.
+- Covered by [Messages](../design/compositions/Messages.md), line 47.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.Read
@@ -336,7 +367,7 @@ then
 
 Authored path: `Messages.Read`.
 - Covered by [Messages](../design/compositions/Messages.md), line 8.
-- Covered by [Messages](../design/compositions/Messages.md), line 23.
+- Covered by [Messages](../design/compositions/Messages.md), line 47.
 
 ```reaction
 when Messaging.read (conversation, user, messages), asked by Messages.Read#2
@@ -350,7 +381,7 @@ then
 
 Authored path: `Messages.Send`.
 - Covered by [Messages](../design/compositions/Messages.md), line 9.
-- Covered by [Messages](../design/compositions/Messages.md), line 24.
+- Covered by [Messages](../design/compositions/Messages.md), line 48.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/messages/send", requestId, session, text)
@@ -362,7 +393,7 @@ then
 
 Authored path: `Messages.Send`.
 - Covered by [Messages](../design/compositions/Messages.md), line 9.
-- Covered by [Messages](../design/compositions/Messages.md), line 24.
+- Covered by [Messages](../design/compositions/Messages.md), line 48.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.Send
@@ -376,7 +407,7 @@ then
 
 Authored path: `Messages.Send`.
 - Covered by [Messages](../design/compositions/Messages.md), line 9.
-- Covered by [Messages](../design/compositions/Messages.md), line 24.
+- Covered by [Messages](../design/compositions/Messages.md), line 48.
 
 ```reaction
 when Messaging.send (conversation, sender: user, text, message), asked by Messages.Send#2
@@ -390,7 +421,7 @@ then
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 21.
+- Covered by [Messages](../design/compositions/Messages.md), line 45.
 
 ```reaction
 when RequestBoundary.request (path: "/messages/start", report, requestId, session)
@@ -402,7 +433,7 @@ then
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 21.
+- Covered by [Messages](../design/compositions/Messages.md), line 45.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.Start
@@ -416,22 +447,36 @@ then
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 21.
+- Covered by [Messages](../design/compositions/Messages.md), line 45.
 
 ```reaction
 when ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.Start#2
 then
-  Messaging.create (first: user, second: owner)
+  ConversationLinking.resolve (context: report, initiator: user)
 ```
 
 ### Messages.Start#4
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 21.
+- Covered by [Messages](../design/compositions/Messages.md), line 45.
 
 ```reaction
-when Messaging.create (first: user, second: owner, conversation), asked by Messages.Start#3
+when ConversationLinking.resolve (context: report, initiator: user, conversation), asked by Messages.Start#3
+where
+  earlier, ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.Start#2
+then
+  Messaging.ensure (conversation, first: user, second: owner)
+```
+
+### Messages.Start#5
+
+Authored path: `Messages.Start`.
+- Covered by [Messages](../design/compositions/Messages.md), line 3.
+- Covered by [Messages](../design/compositions/Messages.md), line 45.
+
+```reaction
+when Messaging.ensure (conversation, first: user, second: owner), asked by Messages.Start#4
 where
   earlier, RequestBoundary.request (path: "/messages/start", report, requestId, session)
 then

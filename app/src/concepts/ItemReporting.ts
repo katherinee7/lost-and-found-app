@@ -223,6 +223,11 @@ export class ItemReportingConcept {
     }];
   }
 
+  async _title({ report }: { report: string }) {
+    const found = await this.reports.findOne({ _id: report }, { projection: { title: 1 } });
+    return found ? [{ title: found.title }] : [];
+  }
+
   async contactTarget({
     requester,
     report,

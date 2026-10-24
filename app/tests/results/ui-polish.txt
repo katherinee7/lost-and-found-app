@@ -1,0 +1,14 @@
+Headless Chrome production preview; isolated temporary MongoDB database.
+{"label":"desktop login","violations":[]}
+{"label":"empty reports","violations":[]}
+{"label":"finder results","violations":[]}
+{"label":"saved records with matches","violations":[]}
+{"label":"messages desktop","violations":[]}
+{"label":"messages mobile 360","violations":[]}
+{"label":"reports mobile 360","violations":[]}
+{"label":"finder mobile 360","violations":[]}
+{"label":"messages mobile 320","violations":[]}
+{"label":"reports mobile 320","violations":[]}
+{"label":"finder mobile 320","violations":[]}
+{"label":"list error state mobile","violations":[]}
+PASS: real browser journeys, keyboard focus, loading/error states, desktop/mobile overflow, and WCAG A/AA scans.

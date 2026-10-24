@@ -1,4 +1,4 @@
-import type { Collection, Db } from "mongodb";
+import { MongoServerError, type Collection, type Db } from "mongodb";
 
 export class InvalidParticipants extends Error {}
 export class InvalidMessage extends Error {}
@@ -51,6 +51,36 @@ export class MessagingConcept {
       messages: [],
     });
 
+    return { conversation };
+  }
+
+  async ensure({ conversation, first, second }: {
+    conversation: string;
+    first: string;
+    second: string;
+  }) {
+    if (first === second) {
+      throw new InvalidParticipants("Choose a different participant.");
+    }
+    try {
+      await this.conversations.updateOne(
+        {
+          _id: conversation,
+          $or: [{ first, second }, { first: second, second: first }],
+        },
+        { $setOnInsert: { first, second, messages: [] } },
+        { upsert: true },
+      );
+    } catch (error) {
+      if (!(error instanceof MongoServerError && error.code === 11000)) throw error;
+      const existing = await this.conversations.findOne({ _id: conversation });
+      if (!existing || !(
+        (existing.first === first && existing.second === second) ||
+        (existing.first === second && existing.second === first)
+      )) {
+        throw new InvalidParticipants("Choose a different participant.");
+      }
+    }
     return { conversation };
   }
 

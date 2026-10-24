@@ -101,6 +101,10 @@ contactTarget (requester: User, report: Report) : returns (owner: User)
 ## Queries
 
 ```queries
+_title (report: Report) : optional (title: String)
+  answers the current title of an existing report, including closed reports
+  answers no rows for an unknown report
+
 _own (author: User) : many (report: Report, title: String, kind: String, attributes: Attributes, open: Flag)
   answers all reports authored by author, including closed reports
   records stored without a kind answer kind missing

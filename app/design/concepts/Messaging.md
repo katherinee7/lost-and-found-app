@@ -10,6 +10,9 @@ A conversation is created between two distinct participants.
 Only its participants can read or send messages.
 Each participant can retrieve their conversations.
 Messages remain available after restarting the application.
+A caller can supply a reserved conversation identity to ensure a conversation
+exists; repeated calls with that identity and the same participants preserve
+the conversation and its messages.
 
 ## Types
 
@@ -41,6 +44,19 @@ create (first: User, second: User) : returns (conversation: Conversation)
   where first differs from second
   then
     add a conversation with these participants and no messages
+    returns conversation
+
+ensure (conversation: Conversation, first: User, second: User) : returns (conversation: Conversation)
+  where first equals second, or conversation exists with different participants
+  then
+    refuses INVALID_PARTICIPANTS "Choose a different participant."
+  where first differs from second and conversation does not exist
+  then
+    add a conversation with the supplied identity, participants, and no messages
+    returns conversation
+  where conversation already has these two participants in either order
+  then
+    preserve its participants and messages
     returns conversation
 
 send (sender: User, conversation: Conversation, text: String) : returns (message: String)

@@ -41,6 +41,8 @@ const visibleReports = computed(() =>
 );
 const busy = ref(false);
 const message = ref("");
+const messageError = ref(false);
+const hasLoaded = ref(false);
 
 async function load() {
   const result = await client.reports.list({
@@ -52,6 +54,7 @@ async function load() {
   }
 
   reports.value = result.book.reports;
+  hasLoaded.value = true;
   matchesByReport.value = {};
   matchErrors.value = {};
   const openFound = reports.value.filter((report) => report.kind === "found" && report.open);
@@ -73,6 +76,7 @@ async function load() {
 
 async function submit() {
   message.value = "";
+  messageError.value = false;
 
   busy.value = true;
 
@@ -97,6 +101,7 @@ async function submit() {
     await load();
     message.value = "Report created.";
   } catch (error) {
+    messageError.value = true;
     message.value =
       error instanceof Error ? error.message : "Could not create report.";
   } finally {
@@ -108,14 +113,19 @@ async function startEditing(report: Report) {
   if (!report.open || busy.value) return;
   editing.value = report;
   editError.value = "";
+  message.value = "";
+  messageError.value = false;
   Object.assign(editFields, prefillReport(report.title, report.attributes));
   await nextTick();
   editPanel.value?.querySelector("input")?.focus();
 }
 
-function cancelEditing() {
+async function cancelEditing() {
+  const report = editing.value?.report;
   editing.value = null;
   editError.value = "";
+  await nextTick();
+  if (report) document.getElementById(`edit-${report}`)?.focus();
 }
 
 async function saveEdit() {
@@ -124,6 +134,7 @@ async function saveEdit() {
   busy.value = true;
   editError.value = "";
   message.value = "";
+  messageError.value = false;
   try {
     const result = await client.reports.update({
       session: props.session,
@@ -138,9 +149,10 @@ async function saveEdit() {
           ? "Check the report fields and time interval."
           : `Could not save changes: ${result.error}`);
     }
-    cancelEditing();
+    await cancelEditing();
     message.value = "Changes saved.";
   } catch (error) {
+    messageError.value = true;
     editError.value = error instanceof Error ? error.message : "Could not save changes.";
     busy.value = false;
     return;
@@ -153,12 +165,15 @@ async function saveEdit() {
     message.value = "Changes saved, but the list could not refresh. Refresh to see the latest results.";
   } finally {
     busy.value = false;
+    await nextTick();
+    document.getElementById(`edit-${report.report}`)?.focus();
   }
 }
 
 async function closeReport(report: string) {
   busy.value = true;
   message.value = "";
+  messageError.value = false;
 
   try {
     const result = await client.reports.close({
@@ -172,6 +187,7 @@ async function closeReport(report: string) {
     await load();
     message.value = "Report closed.";
   } catch (error) {
+    messageError.value = true;
     message.value =
       error instanceof Error ? error.message : "Could not close report.";
   } finally {
@@ -182,9 +198,11 @@ async function closeReport(report: string) {
 async function refresh() {
   busy.value = true;
   message.value = "";
+  messageError.value = false;
   try {
     await load();
   } catch (error) {
+    messageError.value = true;
     matchesByReport.value = {};
     message.value = error instanceof Error ? error.message : "Could not refresh reports.";
   } finally {
@@ -195,6 +213,7 @@ async function refresh() {
 async function contactOwner(report: string) {
   busy.value = true;
   message.value = "";
+  messageError.value = false;
   try {
     const result = await client.messages.start({ session: props.session, report });
     if ("error" in result) {
@@ -204,6 +223,7 @@ async function contactOwner(report: string) {
     }
     emit("contact", result.conversation);
   } catch (error) {
+    messageError.value = true;
     message.value = error instanceof Error ? error.message : "Could not start conversation.";
   } finally {
     busy.value = false;
@@ -220,6 +240,7 @@ onMounted(async () => {
   try {
     await load();
   } catch (error) {
+    messageError.value = true;
     message.value =
       error instanceof Error ? error.message : "Could not load reports.";
   } finally {
@@ -230,150 +251,77 @@ onMounted(async () => {
 
 <template>
   <section>
-    <h2>My Reports</h2>
-    <p>Your full reports are private.</p>
-
-    <h3 v-if="!editing">Report a missing item</h3>
-
-    <form v-if="!editing" @submit.prevent="submit">
-      <ReportFields :fields="fields" />
-
-      <button :disabled="busy">
-        {{ busy ? "Please wait…" : "Submit report" }}
-      </button>
-    </form>
-
-    <p role="status">{{ message }}</p>
-
-    <section v-if="editing" ref="editPanel" aria-label="Edit report">
-      <h3>Edit {{ editing.kind === "found" ? "found record" : "missing report" }}</h3>
-      <form @submit.prevent="saveEdit">
-        <fieldset :disabled="busy">
-          <legend>Report details</legend>
-          <ReportFields :fields="editFields" />
-        </fieldset>
-        <p role="status">{{ editError }}</p>
-        <button :disabled="busy">{{ busy ? "Saving…" : "Save changes" }}</button>
-        <button type="button" :disabled="busy" @click="cancelEditing">Cancel</button>
-      </form>
-    </section>
-
-    <h3>Your records</h3>
-    <button :disabled="busy || !!editing" @click="refresh">Refresh records and matches</button>
-    <div role="group" aria-label="Record kind">
-      <button
-        :aria-pressed="selectedKind === 'missing'"
-        @click="selectedKind = 'missing'"
-      >
-        Missing reports
-      </button>
-      <button
-        :aria-pressed="selectedKind === 'found'"
-        @click="selectedKind = 'found'"
-      >
-        Saved found records
-      </button>
-    </div>
-    <p v-if="selectedKind === 'found'">
-      Save items from Find an Owner using Save for later. These records are private.
-    </p>
-
-    <p v-if="busy">Loading or saving…</p>
-    <p v-else-if="visibleReports.length === 0">
-      {{ selectedKind === "found"
-        ? "You have no saved found records yet."
-        : "You have no missing reports yet." }}
-    </p>
-
-    <article v-for="report in visibleReports" :key="report.report">
-      <h4>{{ report.title }}</h4>
-      <p>
-        {{ report.attributes.category }} ·
-        {{ report.open ? "Open" : "Closed" }}
-      </p>
-      <p>Colors: {{ report.attributes.colors.join(", ") || "Unspecified" }}</p>
-      <p>Brand: {{ report.attributes.brand || "Unspecified" }}</p>
-      <p>
-        {{ formatTime(report.attributes.start) }}
-        –
-        {{ formatTime(report.attributes.end) }}
-      </p>
-      <p>
-        Locations:
-        {{ report.attributes.locations.join(", ") || "Unspecified" }}
-      </p>
-
-      <section v-if="report.kind === 'found' && report.open" aria-label="Potential matches">
-        <p v-if="busy">Updating matches…</p>
-        <p v-else-if="matchErrors[report.report]" role="status">
-          {{ matchErrors[report.report] }}
-        </p>
-        <template v-else-if="matchesByReport[report.report]">
-          <p>{{ matchesByReport[report.report]!.length }} current potential matches</p>
-          <button
-            :aria-expanded="!!expanded[report.report]"
-            @click="expanded[report.report] = !expanded[report.report]"
-          >
-            {{ expanded[report.report] ? "Hide matches" : "View matches" }}
-          </button>
-          <div v-if="expanded[report.report]">
-            <p v-if="matchesByReport[report.report]!.length === 0">
-              No current matches. Refresh later to check again.
-            </p>
-            <article v-for="match in matchesByReport[report.report]" :key="match.report">
-              <h5>{{ match.title }}</h5>
-              <p>{{ match.category }}</p>
-              <p>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</p>
-              <p>{{ match.locations.join(", ") || "Location unspecified" }}</p>
-              <button :disabled="busy || !!editing" @click="contactOwner(match.report)">Contact owner</button>
-            </article>
+    <header class="page-heading">
+      <p class="eyebrow">Your personal lost &amp; found</p>
+      <h2 tabindex="-1">My Reports</h2>
+      <p>Keep track of what’s missing and what you’ve found. Full record details are visible only to you.</p>
+      <a class="mobile-record-jump" href="#records-heading">Jump to your records ↓</a>
+    </header>
+    <p v-if="message" class="status" :class="{ error: messageError }" :role="messageError ? 'alert' : 'status'">{{ message }}</p>
+    <div class="workspace">
+      <section class="panel" :aria-label="editing ? 'Edit report' : 'Create missing report'" ref="editPanel">
+        <h3>{{ editing ? (editing.kind === "found" ? "Edit found record" : "Edit missing report") : "Report a missing item" }}</h3>
+        <p class="hint">{{ editing ? "Update the details below, then save your changes." : "Add what you know. A finder can contact you about a potential match." }}</p>
+        <form v-if="!editing" @submit.prevent="submit" :aria-busy="busy">
+          <fieldset :disabled="busy"><legend class="sr-only">Missing item details</legend><ReportFields :fields="fields" /></fieldset>
+          <button class="primary" :disabled="busy">{{ busy ? "Please wait…" : "Create missing report" }}</button>
+        </form>
+        <form v-else @submit.prevent="saveEdit" :aria-busy="busy">
+          <fieldset :disabled="busy"><legend class="sr-only">Edit report details</legend><ReportFields :fields="editFields" /></fieldset>
+          <p v-if="editError" class="status error" role="alert">{{ editError }}</p>
+          <div class="actions">
+            <button class="primary" :disabled="busy">{{ busy ? "Saving…" : "Save changes" }}</button>
+            <button type="button" :disabled="busy" @click="cancelEditing">Cancel</button>
           </div>
-        </template>
-        <p v-else>Matches unavailable. Refresh to try again.</p>
+        </form>
       </section>
-
-      <button
-        v-if="report.open"
-        :disabled="busy || !!editing"
-        @click="startEditing(report)"
-      >
-        Edit
-      </button>
-      <p v-else>Closed records are read-only.</p>
-
-      <button
-        v-if="report.open"
-        :disabled="busy || !!editing"
-        @click="closeReport(report.report)"
-      >
-        {{ report.kind === "found" ? "Close found record" : "Mark as returned / close report" }}
-      </button>
-    </article>
+      <section aria-labelledby="records-heading">
+        <div class="section-heading"><h3 id="records-heading" tabindex="-1">Your records</h3><button :disabled="busy || !!editing" @click="refresh">Refresh records and matches</button></div>
+        <div class="segmented" role="group" aria-label="Record kind">
+          <button :aria-pressed="selectedKind === 'missing'" @click="selectedKind = 'missing'">Missing reports</button>
+          <button :aria-pressed="selectedKind === 'found'" @click="selectedKind = 'found'">Saved found records</button>
+        </div>
+        <p v-if="selectedKind === 'found'" class="hint">Save found items from Find an Owner. Match counts update when this page loads or you refresh.</p>
+        <p v-if="busy" class="loading" role="status">Updating your records and matches…</p>
+        <div v-else-if="hasLoaded && !messageError && visibleReports.length === 0" class="empty-state">
+          <strong>{{ selectedKind === "found" ? "No saved found records yet." : "No missing reports yet." }}</strong>
+          {{ selectedKind === "found" ? "Use Find an Owner to search or save something you found." : "Use the form to create your first private missing report." }}
+        </div>
+        <div class="records">
+          <article v-for="report in visibleReports" :key="report.report" class="record-card">
+            <div class="record-header"><h4>{{ report.title }}</h4><span class="badge" :class="{ closed: !report.open }">{{ report.open ? "Open" : "Closed" }}</span></div>
+            <dl class="record-details">
+              <div><dt>Category</dt><dd>{{ report.attributes.category }}</dd></div>
+              <div><dt>Brand</dt><dd>{{ report.attributes.brand || "Unspecified" }}</dd></div>
+              <div><dt>Colors</dt><dd>{{ report.attributes.colors.join(", ") || "Unspecified" }}</dd></div>
+              <div><dt>Possible locations</dt><dd>{{ report.attributes.locations.join(", ") || "Unspecified" }}</dd></div>
+              <div class="wide"><dt>Possible loss interval</dt><dd>{{ formatTime(report.attributes.start) }} – {{ formatTime(report.attributes.end) }}</dd></div>
+            </dl>
+            <section v-if="report.kind === 'found' && report.open" class="match-section" aria-label="Potential matches">
+              <p v-if="busy" class="hint">Updating matches…</p>
+              <p v-else-if="matchErrors[report.report]" class="status error" role="alert">{{ matchErrors[report.report] }}</p>
+              <template v-else-if="matchesByReport[report.report]">
+                <div class="match-summary"><strong>{{ matchesByReport[report.report]!.length }} potential {{ matchesByReport[report.report]!.length === 1 ? "match" : "matches" }}</strong>
+                  <button :aria-expanded="!!expanded[report.report]" :aria-controls="`matches-${report.report}`" @click="expanded[report.report] = !expanded[report.report]">{{ expanded[report.report] ? "Hide matches" : "View matches" }}</button>
+                </div>
+                <div v-if="expanded[report.report]" :id="`matches-${report.report}`">
+                  <p v-if="matchesByReport[report.report]!.length === 0" class="hint">No current matches. Refresh later to check again.</p>
+                  <article v-for="match in matchesByReport[report.report]" :key="match.report" class="match-card">
+                    <h5>{{ match.title }}</h5><p>{{ match.category }}</p><p>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</p><p>{{ match.locations.join(", ") || "Location unspecified" }}</p>
+                    <div class="actions"><button :disabled="busy || !!editing" :aria-label="`Contact owner about ${match.title}`" @click="contactOwner(match.report)">Contact owner</button></div>
+                  </article>
+                </div>
+              </template>
+              <p v-else class="hint">Matches unavailable. Refresh to try again.</p>
+            </section>
+            <div v-if="report.open" class="actions">
+              <button :id="`edit-${report.report}`" :disabled="busy || !!editing" :aria-label="`Edit ${report.title}`" @click="startEditing(report)">Edit</button>
+              <button class="quiet danger" :disabled="busy || !!editing" :aria-label="`${report.kind === 'found' ? 'Close found record' : 'Mark returned / close'}: ${report.title}`" @click="closeReport(report.report)">{{ report.kind === "found" ? "Close found record" : "Mark returned / close" }}</button>
+            </div>
+            <p v-else class="hint" style="margin-top: 16px">Closed records are read-only. Existing conversations remain in Messages.</p>
+          </article>
+        </div>
+      </section>
+    </div>
   </section>
 </template>
-
-<style scoped>
-form,
-label {
-  display: grid;
-  gap: 8px;
-}
-
-form {
-  gap: 16px;
-}
-
-input,
-select {
-  padding: 10px;
-  font: inherit;
-  min-width: 0;
-}
-
-article {
-  border: 1px solid #888;
-  border-radius: 8px;
-  padding: 16px;
-  margin: 16px 0;
-}
-</style>

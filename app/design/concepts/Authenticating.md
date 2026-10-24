@@ -76,4 +76,6 @@ logout (session: Session) : returns (ended: Flag)
 ## Queries
 
 ```queries
+_username (user: User) : optional (username: String)
+  answers the registered username of user, or no rows for an unknown user
 ```

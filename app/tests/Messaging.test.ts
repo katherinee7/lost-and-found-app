@@ -173,3 +173,26 @@ test("rejects unknown conversation IDs", async () => {
     }),
   ).rejects.toBeInstanceOf(ConversationUnavailable);
 });
+
+test("ensure reuses reserved identities simultaneously without replacing messages", async () => {
+  const conversation = crypto.randomUUID();
+  const instances = Array.from({ length: 8 }, () => new MessagingConcept(db));
+  const results = await Promise.all(instances.map((instance) => instance.ensure({ conversation, first: "ensure-owner", second: "ensure-finder" })));
+  expect(results).toEqual(instances.map(() => ({ conversation })));
+  await messaging.send({ sender: "ensure-owner", conversation, text: "Keep this message" });
+  await messaging.ensure({ conversation, first: "ensure-finder", second: "ensure-owner" });
+  expect((await messaging.read({ user: "ensure-finder", conversation })).messages.map((m) => m.text)).toEqual(["Keep this message"]);
+  expect(await db.collection("messaging.conversations").countDocuments({ _id: conversation })).toBe(1);
+});
+
+test("ensure rejects self conversations or changed participants without changing state", async () => {
+  const conversation = crypto.randomUUID();
+  await messaging.ensure({ conversation, first: "stable-a", second: "stable-b" });
+  await messaging.send({ sender: "stable-a", conversation, text: "Original" });
+  const original = await messaging.read({ user: "stable-a", conversation });
+  await expect(messaging.ensure({ conversation, first: "stable-a", second: "intruder" })).rejects.toBeInstanceOf(InvalidParticipants);
+  const unused = crypto.randomUUID();
+  await expect(messaging.ensure({ conversation: unused, first: "same", second: "same" })).rejects.toBeInstanceOf(InvalidParticipants);
+  expect(await db.collection("messaging.conversations").findOne({ _id: unused })).toBeNull();
+  expect(await messaging.read({ user: "stable-b", conversation })).toEqual(original);
+});
