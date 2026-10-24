@@ -18,17 +18,53 @@ const handler = createHttpHandler({
   policy,
 });
 
-const server = Bun.serve({
-  hostname: "127.0.0.1",
-  port: 3000,
+const dist = new URL("../web/dist/", import.meta.url);
 
-  fetch(request) {
-    // Temporary infrastructure check, separate from app features.
-    if (new URL(request.url).pathname === "/api/health") {
-      return Response.json({ status: "ok" });
+const server = Bun.serve({
+  hostname: process.env.HOST ?? "127.0.0.1",
+  port: Number(process.env.PORT ?? 3000),
+
+  async fetch(request) {
+    const { pathname } = new URL(request.url);
+
+    if (pathname === "/health" || pathname === "/api/health") {
+      try {
+        await db.command({ ping: 1 });
+        return Response.json({ status: "ok" });
+      } catch {
+        return Response.json({ status: "unavailable" }, { status: 503 });
+      }
     }
 
-    return handler(request);
+    // API errors and unknown API paths must never fall through to Vue.
+    if (pathname === "/api" || pathname.startsWith("/api/")) {
+      return handler(request);
+    }
+
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response("Method not allowed", {
+        status: 405,
+        headers: { Allow: "GET, HEAD" },
+      });
+    }
+
+    let relative: string;
+    try {
+      relative = decodeURIComponent(pathname).replace(/^\/+/, "");
+    } catch {
+      return new Response("Invalid path", { status: 400 });
+    }
+    if (relative.split(/[\\/]/).includes("..") || relative.includes("\0")) {
+      return new Response("Invalid path", { status: 400 });
+    }
+    const file = Bun.file(dist.pathname + relative);
+    const page = await file.exists() ? file : Bun.file(new URL("index.html", dist));
+    if (!(await page.exists())) {
+      return new Response("Frontend not built. Run bun run build.", { status: 404 });
+    }
+    return new Response(request.method === "HEAD" ? null : page, {
+      headers: { "Content-Type": page.type },
+    });
   },
 });
 

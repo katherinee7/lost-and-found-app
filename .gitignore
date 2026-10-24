@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+# Host demo videos externally; retain local copies.
+*.mov
+*.mp4
+*.webm

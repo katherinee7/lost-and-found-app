@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "build": "bun run --cwd app build",
+    "start": "bun run --cwd app start",
+    "db:up": "bun run --cwd app db:up",
+    "preview": "bun run db:up && bun run build && NODE_ENV=production HOST=127.0.0.1 PORT=3000 bun run start",
+    "check": "bun run --cwd app check",
+    "type-check": "bun run --cwd app/web type-check"
+  }
+}
