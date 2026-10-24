@@ -136,6 +136,25 @@ export type BacktrackWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "UNKNOWN_SESSION" };
   };
+  "/reports/matches": {
+    input: {
+      "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "results": {
+        "matches": {
+          "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["category"]>>;
+          "end": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["end"]>>;
+          "locations": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["locations"]>>;
+          "report": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>[0], ["report"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Matching"]["_search"]>>>, ["record"]>]>>;
+          "start": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["start"]>>;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["title"]>>;
+        }[];
+      };
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+  };
   "/reports/search": {
     input: {
       "attributes": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["_search"]>[0], ["attributes"]>>;
@@ -281,6 +300,25 @@ export type BacktrackWireHttp = {
       };
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/reports/matches": {
+    input: {
+      "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "results": {
+        "matches": {
+          "category": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["category"]>>;
+          "end": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["end"]>>;
+          "locations": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["locations"]>>;
+          "report": Jsonify<AllOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>[0], ["report"]>, AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["Matching"]["_search"]>>>, ["record"]>]>>;
+          "start": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["start"]>>;
+          "title": Jsonify<AtPath<QueryRow<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["_summary"]>>>, ["title"]>>;
+        }[];
+      };
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/reports/search": {
     input: {

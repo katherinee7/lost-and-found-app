@@ -225,6 +225,7 @@ function showConversation(conversation: string) {
       <MyReports
         v-if="page === 'My Reports'"
         :session="session"
+        @contact="showConversation"
       />
 
       <FindOwner

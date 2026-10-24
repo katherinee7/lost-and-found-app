@@ -162,13 +162,34 @@ export class ItemReportingConcept {
     return { report };
   }
 
-  async _summary({ report }: { report: string }) {
+  async readFound({ author, report }: {
+    author: string;
+    report: string;
+  }) {
+    const found = await this.reports.findOne({
+      _id: report,
+      author,
+      kind: "found",
+      open: true,
+    });
+    if (!found) throw new ReportUnavailable("That report is unavailable.");
+    return { attributes: found.attributes };
+  }
+
+  async _summary({ report, requester }: {
+    report: string;
+    requester: string;
+  }) {
     const found = await this.reports.findOne({
       _id: report,
       open: true,
     });
 
-    if (!found || (found.kind ?? "missing") !== "missing") return [];
+    if (
+      !found ||
+      (found.kind ?? "missing") !== "missing" ||
+      found.author === requester
+    ) return [];
 
     return [{
       title: found.title,

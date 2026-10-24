@@ -19,7 +19,7 @@ and coordinate the return of lost belongings.
 
 ## P3 progress
 
-- [Saved found records and verification](p3.md)
+- [Saved found records, later matches, and verification](p3.md)
 
 ## Setup and local development
 

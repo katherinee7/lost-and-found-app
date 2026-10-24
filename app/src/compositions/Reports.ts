@@ -207,7 +207,7 @@ const searchOutput: EndpointValidator = (value) => {
 const SearchResults = former(
   "limited summaries of compatible open reports",
   (
-    { attributes },
+    { attributes, user },
     { report, title, category, start, end, locations },
   ) =>
     form({
@@ -215,7 +215,7 @@ const SearchResults = former(
         Matching._search({ attributes }).is({ record: report }),
       )
         .where(
-          ItemReporting._summary({ report }).is({
+          ItemReporting._summary({ report, requester: user }).is({
             title,
             category,
             start,
@@ -244,7 +244,7 @@ const Search = endpoint(
       )
       .then(
         respond({
-          results: SearchResults({ attributes }),
+          results: SearchResults({ attributes, user }),
         }),
       ),
   {
@@ -256,6 +256,19 @@ const Search = endpoint(
   },
 );
 
+const Matches = endpoint(
+  "/reports/matches",
+  ({ session, user, report, attributes }) =>
+    receive({ session, report })
+      .then(Authenticating.authenticate({ session }).responds({ user }))
+      .then(ItemReporting.readFound({ author: user, report }).responds({ attributes }))
+      .then(respond({ results: SearchResults({ attributes, user }) })),
+  {
+    input: { required: ["session", "report"] },
+    validators: { input: closeInput, output: searchOutput },
+  },
+);
+
 export const composition = {
   OwnReports,
   Create,
@@ -263,4 +276,5 @@ export const composition = {
   Close,
   SearchResults,
   Search,
+  Matches,
 };

@@ -63,6 +63,15 @@ close (author: User, report: Report) : returns (report: Report)
     set its open flag to false
     returns report
 
+readFound (author: User, report: Report) : returns (attributes: Attributes)
+  where report does not exist, is closed, is not found, or is not authored by author
+  then
+    refuses REPORT_UNAVAILABLE "That report is unavailable."
+  where report is open, found, and authored by author
+  then
+    bind attributes to the report's attributes
+    returns attributes
+
 contactTarget (requester: User, report: Report) : returns (owner: User)
   where report does not exist, is found, is closed, or belongs to requester
   then
@@ -81,8 +90,8 @@ _own (author: User) : many (report: Report, title: String, kind: String, attribu
   records stored without a kind answer kind missing
   answers no rows when the author has no reports
 
-_summary (report: Report) : optional (title: String, category: String, start: String, end: String, locations: Locations)
-  answers a limited summary only for an open missing report
+_summary (report: Report, requester: User) : optional (title: String, category: String, start: String, end: String, locations: Locations)
+  answers a limited summary only for an open missing report authored by someone other than requester
   records stored without a kind are treated as missing
-  answers no rows for found, closed, or nonexistent reports
+  answers no rows for self-authored, found, closed, or nonexistent reports
 ```

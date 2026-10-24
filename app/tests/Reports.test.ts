@@ -93,3 +93,75 @@ test("invalid or unauthenticated requests cannot create, list or close records",
   expect((await post("/reports/close", { session: "invented", report })).error).toBe("UNAUTHORIZED");
   expect((await post("/reports/list", { session })).book.reports[0].open).toBe(true);
 });
+
+test("later matches are recomputed on each request and exclude closed, incompatible, and self-authored reports", async () => {
+  const finder = await account("finder");
+  const owner = await account("owner");
+  const { report: found } = await post("/reports/create", {
+    session: finder.session, kind: "found", title: "Found calculator", attributes,
+  });
+  const loadMatches = () => post("/reports/matches", { session: finder.session, report: found });
+  expect((await loadMatches()).results.matches).toEqual([]);
+
+  // The missing report appears only after the finder has already saved and loaded.
+  const { report: later } = await post("/reports/create", {
+    session: owner.session, kind: "missing", title: "Later calculator",
+    attributes: { ...attributes, colors: [" BLACK "], brand: "casio", locations: ["library"] },
+  });
+  expect((await loadMatches()).results.matches).toEqual([
+    { report: later, title: "Later calculator", category: attributes.category,
+      start: attributes.start, end: attributes.end, locations: ["library"] },
+  ]);
+  const { report: self } = await post("/reports/create", {
+    session: finder.session, kind: "missing", title: "My own calculator", attributes,
+  });
+  // Legacy self-authored reports must be excluded too.
+  await db.collection("itemreporting.reports").updateOne({ _id: self }, { $unset: { kind: "" } });
+  for (const changed of [
+    { category: "Bags" }, { colors: ["red"] }, { brand: "Other" }, { locations: ["Gym"] },
+    { start: "2026-10-25T10:00:00Z", end: "2026-10-25T14:00:00Z" },
+  ]) {
+    await post("/reports/create", { session: owner.session, kind: "missing", title: "Incompatible", attributes: { ...attributes, ...changed } });
+  }
+  const { report: closed } = await post("/reports/create", {
+    session: owner.session, kind: "missing", title: "Closed", attributes,
+  });
+  await post("/reports/close", { session: owner.session, report: closed });
+  await post("/reports/create", { session: owner.session, kind: "found", title: "Another found item", attributes });
+  expect((await loadMatches()).results.matches.map((match: { report: string }) => match.report)).toEqual([later]);
+  // Finder search shares the same exclusion and summary rules.
+  expect((await post("/reports/search", { session: finder.session, attributes })).results.matches.map((match: { report: string }) => match.report)).toEqual([later]);
+  expect(typeof (await post("/messages/start", { session: finder.session, report: later })).conversation).toBe("string");
+  await post("/reports/close", { session: owner.session, report: later });
+  expect((await loadMatches()).results.matches).toEqual([]);
+});
+
+test("only the author of an open found record can request its matches", async () => {
+  const finder = await account("finder");
+  const other = await account("other");
+  const { report } = await post("/reports/create", { session: finder.session, kind: "found", title: "Private", attributes });
+  expect((await post("/reports/matches", { session: other.session, author: finder.user, report, attributes })).error).toBe("NOT_FOUND");
+  expect((await post("/reports/matches", { session: "invented", report })).error).toBe("UNAUTHORIZED");
+  expect((await post("/reports/matches", { session: finder.session, report: "nonexistent" })).error).toBe("NOT_FOUND");
+  expect((await post("/reports/matches", { session: finder.session, report: "" })).error).toBe("INVALID_REQUEST");
+  const { report: missing } = await post("/reports/create", { session: finder.session, kind: "missing", title: "Missing", attributes });
+  expect((await post("/reports/matches", { session: finder.session, report: missing })).error).toBe("NOT_FOUND");
+  expect((await post("/reports/list", { session: finder.session })).book.reports.find((r: { report: string }) => r.report === report).open).toBe(true);
+  await post("/reports/close", { session: finder.session, report });
+  expect((await post("/reports/matches", { session: finder.session, report })).error).toBe("NOT_FOUND");
+});
+
+test("later matching uses stored found attributes and includes legacy missing reports", async () => {
+  const finder = await account("finder");
+  const owner = await account("owner");
+  const { report } = await post("/reports/create", { session: finder.session, kind: "found", title: "Found", attributes });
+  const { report: missing } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Legacy", attributes });
+  await db.collection("itemreporting.reports").updateOne({ _id: missing }, { $unset: { kind: "" } });
+  const response = await post("/reports/matches", {
+    session: finder.session, report, attributes: { ...attributes, category: "Bags" },
+  });
+  expect(response.results.matches).toEqual([
+    { report: missing, title: "Legacy", category: attributes.category,
+      start: attributes.start, end: attributes.end, locations: attributes.locations },
+  ]);
+});

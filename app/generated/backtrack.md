@@ -39,13 +39,15 @@ Defined in [ItemReporting](../design/concepts/ItemReporting.md), line 1.
   - Refuses `INVALID_REPORT`: Check the report fields and time interval.
 - `close(author: User, report: Report) : returns (report: Report)`
   - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
+- `readFound(author: User, report: Report) : returns (attributes: Attributes)`
+  - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
 - `contactTarget(requester: User, report: Report) : returns (owner: User)`
   - Refuses `REPORT_UNAVAILABLE`: That report is unavailable or belongs to you.
 
 #### Queries
 
 - `_own(author: User) : many (report: Report, title: String, kind: String, attributes: Attributes, open: Flag)`
-- `_summary(report: Report) : optional (title: String, category: String, start: String, end: String, locations: Locations)`
+- `_summary(report: Report, requester: User) : optional (title: String, category: String, start: String, end: String, locations: Locations)`
 
 #### Instances
 
@@ -105,10 +107,10 @@ Authored path: `Reports.SearchResults`.
 - Covered by [Reports](../design/compositions/Reports.md), line 16.
 
 ```former
-Former "limited summaries of compatible open reports" — inputs (attributes); bindings (report, title, category, start, end, locations); promises exactly one record — forms:
+Former "limited summaries of compatible open reports" — inputs (attributes, user); bindings (report, title, category, start, end, locations); promises exactly one record — forms:
   a record of
     matches: each Matching._search (attributes) has (record: report)
-      where ItemReporting._summary (report) has (category, end, locations, start, title)
+      where ItemReporting._summary (report, requester: user) has (category, end, locations, start, title)
       form a record of
         category
         end
@@ -437,7 +439,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 36.
+- Covered by [Reports](../design/compositions/Reports.md), line 51.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/close", report, requestId, session)
@@ -449,7 +451,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 36.
+- Covered by [Reports](../design/compositions/Reports.md), line 51.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Close
@@ -463,7 +465,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 36.
+- Covered by [Reports](../design/compositions/Reports.md), line 51.
 
 ```reaction
 when ItemReporting.close (author, report), asked by Reports.Close#2
@@ -475,7 +477,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 36.
+- Covered by [Reports](../design/compositions/Reports.md), line 51.
 
 ```reaction
 when Matching.remove (record: report), asked by Reports.Close#3
@@ -489,7 +491,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 34.
+- Covered by [Reports](../design/compositions/Reports.md), line 49.
 
 ```reaction
 when RequestBoundary.request (attributes, kind, path: "/reports/create", requestId, session, title)
@@ -501,7 +503,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 34.
+- Covered by [Reports](../design/compositions/Reports.md), line 49.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Create
@@ -515,7 +517,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 34.
+- Covered by [Reports](../design/compositions/Reports.md), line 49.
 
 ```reaction
 when ItemReporting.create (attributes, author, kind, title, report), asked by Reports.Create#2
@@ -527,7 +529,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 34.
+- Covered by [Reports](../design/compositions/Reports.md), line 49.
 
 ```reaction
 when Matching.register (attributes, record: report), asked by Reports.Create#3
@@ -541,7 +543,7 @@ then
 
 Authored path: `Reports.List`.
 - Covered by [Reports](../design/compositions/Reports.md), line 4.
-- Covered by [Reports](../design/compositions/Reports.md), line 35.
+- Covered by [Reports](../design/compositions/Reports.md), line 50.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/list", requestId, session)
@@ -553,7 +555,7 @@ then
 
 Authored path: `Reports.List`.
 - Covered by [Reports](../design/compositions/Reports.md), line 4.
-- Covered by [Reports](../design/compositions/Reports.md), line 35.
+- Covered by [Reports](../design/compositions/Reports.md), line 50.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.List
@@ -563,11 +565,51 @@ then
   RequestBoundary.respond (book: former "the authenticated user's reports" with (author), requestId)
 ```
 
+### Reports.Matches
+
+Authored path: `Reports.Matches`.
+- Covered by [Reports](../design/compositions/Reports.md), line 28.
+- Covered by [Reports](../design/compositions/Reports.md), line 53.
+
+```reaction
+when RequestBoundary.request (path: "/reports/matches", report, requestId, session)
+then
+  Authenticating.authenticate (session)
+```
+
+### Reports.Matches#2
+
+Authored path: `Reports.Matches`.
+- Covered by [Reports](../design/compositions/Reports.md), line 28.
+- Covered by [Reports](../design/compositions/Reports.md), line 53.
+
+```reaction
+when Authenticating.authenticate (session, user), asked by Reports.Matches
+where
+  earlier, RequestBoundary.request (path: "/reports/matches", report, requestId, session)
+then
+  ItemReporting.readFound (author: user, report)
+```
+
+### Reports.Matches#3
+
+Authored path: `Reports.Matches`.
+- Covered by [Reports](../design/compositions/Reports.md), line 28.
+- Covered by [Reports](../design/compositions/Reports.md), line 53.
+
+```reaction
+when ItemReporting.readFound (author: user, report, attributes), asked by Reports.Matches#2
+where
+  earlier, RequestBoundary.request (path: "/reports/matches", report, requestId, session)
+then
+  RequestBoundary.respond (requestId, results: former "limited summaries of compatible open reports" with (attributes, user))
+```
+
 ### Reports.Search
 
 Authored path: `Reports.Search`.
 - Covered by [Reports](../design/compositions/Reports.md), line 14.
-- Covered by [Reports](../design/compositions/Reports.md), line 37.
+- Covered by [Reports](../design/compositions/Reports.md), line 52.
 
 ```reaction
 when RequestBoundary.request (attributes, path: "/reports/search", requestId, session)
@@ -579,14 +621,14 @@ then
 
 Authored path: `Reports.Search`.
 - Covered by [Reports](../design/compositions/Reports.md), line 14.
-- Covered by [Reports](../design/compositions/Reports.md), line 37.
+- Covered by [Reports](../design/compositions/Reports.md), line 52.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Reports.Search
 where
   earlier, RequestBoundary.request (attributes, path: "/reports/search", requestId, session)
 then
-  RequestBoundary.respond (requestId, results: former "limited summaries of compatible open reports" with (attributes))
+  RequestBoundary.respond (requestId, results: former "limited summaries of compatible open reports" with (attributes, user))
 ```
 
 ## Endpoint input contracts
@@ -607,4 +649,5 @@ not listed here have no explicit input contract.
 - `/reports/close` — requires `session`, `report`
 - `/reports/create` — requires `session`, `title`, `kind`, `attributes`
 - `/reports/list` — requires `session`
+- `/reports/matches` — requires `session`, `report`
 - `/reports/search` — requires `session`, `attributes`

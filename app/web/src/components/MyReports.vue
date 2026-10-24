@@ -21,6 +21,20 @@ interface Report {
   open: boolean;
 }
 
+interface Match {
+  report: string;
+  title: string;
+  category: string;
+  start: string;
+  end: string;
+  locations: string[];
+}
+
+const emit = defineEmits<{ contact: [conversation: string] }>();
+const matchesByReport = ref<Record<string, Match[]>>({});
+const matchErrors = ref<Record<string, string>>({});
+const expanded = ref<Record<string, boolean>>({});
+
 const categories = [
   "Electronics",
   "Keys and cards",
@@ -70,6 +84,23 @@ async function load() {
   }
 
   reports.value = result.book.reports;
+  matchesByReport.value = {};
+  matchErrors.value = {};
+  const openFound = reports.value.filter((report) => report.kind === "found" && report.open);
+  const results = await Promise.allSettled(openFound.map(async ({ report }) => {
+    const result = await client.reports.matches({ session: props.session, report });
+    if ("error" in result) throw new Error(`Could not load matches: ${result.error}`);
+    return result.results.matches;
+  }));
+  results.forEach((result, index) => {
+    const report = openFound[index]!.report;
+    if (result.status === "fulfilled") {
+      matchesByReport.value[report] = result.value;
+    } else {
+      matchErrors.value[report] = result.reason instanceof Error
+        ? result.reason.message : "Could not load matches. Refresh to try again.";
+    }
+  });
 }
 
 async function submit() {
@@ -149,6 +180,37 @@ async function closeReport(report: string) {
   } catch (error) {
     message.value =
       error instanceof Error ? error.message : "Could not close report.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function refresh() {
+  busy.value = true;
+  message.value = "";
+  try {
+    await load();
+  } catch (error) {
+    matchesByReport.value = {};
+    message.value = error instanceof Error ? error.message : "Could not refresh reports.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function contactOwner(report: string) {
+  busy.value = true;
+  message.value = "";
+  try {
+    const result = await client.messages.start({ session: props.session, report });
+    if ("error" in result) {
+      throw new Error(result.error === "NOT_FOUND"
+        ? "That report is no longer available. Refresh to update matches."
+        : `Could not start conversation: ${result.error}`);
+    }
+    emit("contact", result.conversation);
+  } catch (error) {
+    message.value = error instanceof Error ? error.message : "Could not start conversation.";
   } finally {
     busy.value = false;
   }
@@ -235,6 +297,7 @@ onMounted(async () => {
     <p role="status">{{ message }}</p>
 
     <h3>Your records</h3>
+    <button :disabled="busy" @click="refresh">Refresh records and matches</button>
     <div role="group" aria-label="Record kind">
       <button
         :aria-pressed="selectedKind === 'missing'"
@@ -277,6 +340,35 @@ onMounted(async () => {
         Locations:
         {{ report.attributes.locations.join(", ") || "Unspecified" }}
       </p>
+
+      <section v-if="report.kind === 'found' && report.open" aria-label="Potential matches">
+        <p v-if="busy">Updating matches…</p>
+        <p v-else-if="matchErrors[report.report]" role="status">
+          {{ matchErrors[report.report] }}
+        </p>
+        <template v-else-if="matchesByReport[report.report]">
+          <p>{{ matchesByReport[report.report]!.length }} current potential matches</p>
+          <button
+            :aria-expanded="!!expanded[report.report]"
+            @click="expanded[report.report] = !expanded[report.report]"
+          >
+            {{ expanded[report.report] ? "Hide matches" : "View matches" }}
+          </button>
+          <div v-if="expanded[report.report]">
+            <p v-if="matchesByReport[report.report]!.length === 0">
+              No current matches. Refresh later to check again.
+            </p>
+            <article v-for="match in matchesByReport[report.report]" :key="match.report">
+              <h5>{{ match.title }}</h5>
+              <p>{{ match.category }}</p>
+              <p>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</p>
+              <p>{{ match.locations.join(", ") || "Location unspecified" }}</p>
+              <button :disabled="busy" @click="contactOwner(match.report)">Contact owner</button>
+            </article>
+          </div>
+        </template>
+        <p v-else>Matches unavailable. Refresh to try again.</p>
+      </section>
 
       <button
         v-if="report.open"
