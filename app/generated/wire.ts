@@ -174,6 +174,18 @@ export type BacktrackWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "UNKNOWN_SESSION" };
   };
+  "/reports/update": {
+    input: {
+      "attributes": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["update"]>[0], ["attributes"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["attributes"]>]>>;
+      "report": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["update"]>[0], ["report"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["record"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["update"]>[0], ["title"]>>;
+    };
+    output: {
+      "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["record"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_MATCH_ATTRIBUTES" | "INVALID_REPORT" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+  };
 };
 
 export type HttpAppWideError = never;
@@ -338,5 +350,17 @@ export type BacktrackWireHttp = {
       };
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/reports/update": {
+    input: {
+      "attributes": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["update"]>[0], ["attributes"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["attributes"]>]>>;
+      "report": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["update"]>[0], ["report"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["record"]>]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+      "title": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["update"]>[0], ["title"]>>;
+    };
+    output: {
+      "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["record"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
 };

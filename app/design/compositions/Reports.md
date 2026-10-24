@@ -2,6 +2,7 @@
 
 A signed-in user can [create a missing report or private found record](reaction:Reports.Create),
 [list their own reports](reaction:Reports.List),
+[edit their open reports](reaction:Reports.Update),
 and [close their own report](reaction:Reports.Close).
 
 Every endpoint authenticates the session before performing report operations.
@@ -41,12 +42,26 @@ Contact owner uses Messages.Start. Closed found records have no match action.
 Failed requests show an unavailable state rather than a count of zero. Counts
 are not stored. There is no polling, unread tracking, or notification state.
 
+Editing supplies report ID, title, and replacement attributes; kind and author
+cannot be changed. Update authenticates the session, calls ItemReporting.update
+(which validates content and checks author and open status in the database
+operation), then replaces the Matching entry with Matching.register before
+responding. Rejected edits leave both concepts unchanged. Both missing and found
+records are editable, including legacy missing reports without a stored kind.
+
+The interface prefills a shared form with the author's stored title and
+characteristics. Save changes submits the update; Cancel discards the draft.
+Closed records show no edit action and the backend rejects their updates.
+After saving, the frontend reloads records and saved-found match lists.
+Subsequent finder searches and saved-record refreshes use edited attributes.
+
 Creating a report registers its characteristics with Matching before responding.
 Closing a report removes its matching entry before responding.
 Search results omit full report attributes and author identities.
 
 ```endpoints
 Reports.Create at /reports/create
+Reports.Update at /reports/update
 Reports.List at /reports/list
 Reports.Close at /reports/close
 Reports.Search at /reports/search

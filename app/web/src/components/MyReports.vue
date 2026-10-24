@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { client } from "../client";
+import ReportFields from "./ReportFields.vue";
+import { attributesFromFields, emptyReportFields, prefillReport, type ReportAttributes as Attributes } from "../report-form";
 
 const props = defineProps<{ session: string }>();
-
-interface Attributes {
-  category: string;
-  colors: string[];
-  brand: string;
-  start: string;
-  end: string;
-  locations: string[];
-}
 
 interface Report {
   report: string;
@@ -35,25 +28,11 @@ const matchesByReport = ref<Record<string, Match[]>>({});
 const matchErrors = ref<Record<string, string>>({});
 const expanded = ref<Record<string, boolean>>({});
 
-const categories = [
-  "Electronics",
-  "Keys and cards",
-  "Clothing and accessories",
-  "Bags",
-  "Books and stationery",
-  "Bottles and containers",
-  "Other",
-];
-
-const fields = reactive({
-  title: "",
-  category: "Electronics",
-  colors: "",
-  brand: "",
-  start: "",
-  end: "",
-  locations: "",
-});
+const fields = reactive(emptyReportFields());
+const editFields = reactive(emptyReportFields());
+const editing = ref<Report | null>(null);
+const editError = ref("");
+const editPanel = ref<HTMLElement | null>(null);
 
 const reports = ref<Report[]>([]);
 const selectedKind = ref<"missing" | "found">("missing");
@@ -62,17 +41,6 @@ const visibleReports = computed(() =>
 );
 const busy = ref(false);
 const message = ref("");
-
-function splitValues(value: string) {
-  return [
-    ...new Set(
-      value
-        .split(",")
-        .map((part) => part.trim())
-        .filter(Boolean),
-    ),
-  ];
-}
 
 async function load() {
   const result = await client.reports.list({
@@ -106,33 +74,14 @@ async function load() {
 async function submit() {
   message.value = "";
 
-  const start = new Date(fields.start);
-  const end = new Date(fields.end);
-
-  if (
-    !Number.isFinite(start.getTime()) ||
-    !Number.isFinite(end.getTime()) ||
-    start > end
-  ) {
-    message.value = "Enter a valid time interval with start before end.";
-    return;
-  }
-
   busy.value = true;
 
   try {
     const result = await client.reports.create({
-    session: props.session,
-    title: fields.title,
-    kind: "missing",
-    attributes: {
-        category: fields.category,
-        colors: splitValues(fields.colors),
-        brand: fields.brand,
-        start: start.toISOString(),
-        end: end.toISOString(),
-        locations: splitValues(fields.locations),
-    },
+      session: props.session,
+      title: fields.title,
+      kind: "missing",
+      attributes: attributesFromFields(fields),
     });
 
     if ("error" in result) {
@@ -143,20 +92,65 @@ async function submit() {
     );
     }
 
-    // Reset the form after the report has been saved.
-    fields.title = "";
-    fields.category = "Electronics";
-    fields.colors = "";
-    fields.brand = "";
-    fields.start = "";
-    fields.end = "";
-    fields.locations = "";
+    Object.assign(fields, emptyReportFields());
 
     await load();
     message.value = "Report created.";
   } catch (error) {
     message.value =
       error instanceof Error ? error.message : "Could not create report.";
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function startEditing(report: Report) {
+  if (!report.open || busy.value) return;
+  editing.value = report;
+  editError.value = "";
+  Object.assign(editFields, prefillReport(report.title, report.attributes));
+  await nextTick();
+  editPanel.value?.querySelector("input")?.focus();
+}
+
+function cancelEditing() {
+  editing.value = null;
+  editError.value = "";
+}
+
+async function saveEdit() {
+  const report = editing.value;
+  if (!report || busy.value) return;
+  busy.value = true;
+  editError.value = "";
+  message.value = "";
+  try {
+    const result = await client.reports.update({
+      session: props.session,
+      report: report.report,
+      title: editFields.title,
+      attributes: attributesFromFields(editFields, report.attributes),
+    });
+    if ("error" in result) {
+      throw new Error(result.error === "NOT_FOUND"
+        ? "This report is unavailable or has been closed. Cancel and refresh the list."
+        : result.error === "INVALID_REQUEST"
+          ? "Check the report fields and time interval."
+          : `Could not save changes: ${result.error}`);
+    }
+    cancelEditing();
+    message.value = "Changes saved.";
+  } catch (error) {
+    editError.value = error instanceof Error ? error.message : "Could not save changes.";
+    busy.value = false;
+    return;
+  }
+  // A refresh failure must not suggest that an already successful edit failed.
+  try {
+    await load();
+  } catch {
+    matchesByReport.value = {};
+    message.value = "Changes saved, but the list could not refresh. Refresh to see the latest results.";
   } finally {
     busy.value = false;
   }
@@ -239,55 +233,10 @@ onMounted(async () => {
     <h2>My Reports</h2>
     <p>Your full reports are private.</p>
 
-    <h3>Report a missing item</h3>
+    <h3 v-if="!editing">Report a missing item</h3>
 
-    <form @submit.prevent="submit">
-      <label>
-        Title
-        <input
-          v-model="fields.title"
-          maxlength="120"
-          placeholder="Missing calculator"
-          required
-        />
-      </label>
-
-      <label>
-        Category
-        <select v-model="fields.category">
-          <option v-for="category in categories" :key="category">
-            {{ category }}
-          </option>
-        </select>
-      </label>
-
-      <label>
-        Colors, separated by commas
-        <input v-model="fields.colors" placeholder="Black, silver" />
-      </label>
-
-      <label>
-        Brand (optional)
-        <input v-model="fields.brand" maxlength="100" />
-      </label>
-
-      <label>
-        Earliest possible loss time
-        <input v-model="fields.start" type="datetime-local" required />
-      </label>
-
-      <label>
-        Latest possible loss time
-        <input v-model="fields.end" type="datetime-local" required />
-      </label>
-
-      <label>
-        Possible locations, separated by commas
-        <input
-          v-model="fields.locations"
-          placeholder="Library, Lecture hall"
-        />
-      </label>
+    <form v-if="!editing" @submit.prevent="submit">
+      <ReportFields :fields="fields" />
 
       <button :disabled="busy">
         {{ busy ? "Please wait…" : "Submit report" }}
@@ -296,8 +245,21 @@ onMounted(async () => {
 
     <p role="status">{{ message }}</p>
 
+    <section v-if="editing" ref="editPanel" aria-label="Edit report">
+      <h3>Edit {{ editing.kind === "found" ? "found record" : "missing report" }}</h3>
+      <form @submit.prevent="saveEdit">
+        <fieldset :disabled="busy">
+          <legend>Report details</legend>
+          <ReportFields :fields="editFields" />
+        </fieldset>
+        <p role="status">{{ editError }}</p>
+        <button :disabled="busy">{{ busy ? "Saving…" : "Save changes" }}</button>
+        <button type="button" :disabled="busy" @click="cancelEditing">Cancel</button>
+      </form>
+    </section>
+
     <h3>Your records</h3>
-    <button :disabled="busy" @click="refresh">Refresh records and matches</button>
+    <button :disabled="busy || !!editing" @click="refresh">Refresh records and matches</button>
     <div role="group" aria-label="Record kind">
       <button
         :aria-pressed="selectedKind === 'missing'"
@@ -363,7 +325,7 @@ onMounted(async () => {
               <p>{{ match.category }}</p>
               <p>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</p>
               <p>{{ match.locations.join(", ") || "Location unspecified" }}</p>
-              <button :disabled="busy" @click="contactOwner(match.report)">Contact owner</button>
+              <button :disabled="busy || !!editing" @click="contactOwner(match.report)">Contact owner</button>
             </article>
           </div>
         </template>
@@ -372,7 +334,16 @@ onMounted(async () => {
 
       <button
         v-if="report.open"
-        :disabled="busy"
+        :disabled="busy || !!editing"
+        @click="startEditing(report)"
+      >
+        Edit
+      </button>
+      <p v-else>Closed records are read-only.</p>
+
+      <button
+        v-if="report.open"
+        :disabled="busy || !!editing"
         @click="closeReport(report.report)"
       >
         {{ report.kind === "found" ? "Close found record" : "Mark as returned / close report" }}

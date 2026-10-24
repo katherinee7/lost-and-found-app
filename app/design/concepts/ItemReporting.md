@@ -2,12 +2,14 @@
 
 ## Purpose
 
-Store private item reports that their authors can review and close.
+Store private item reports that their authors can review, edit, and close.
 
 ## Principle
 
 A user creates a missing report or a found record and sees it in their own list.
-Other users do not see it in their lists and cannot close it.
+The author can replace an open report's title and characteristics.
+Other users do not see it in their lists and cannot edit or close it.
+Closed reports remain read-only.
 Closing a report preserves its information but marks it closed.
 
 Existing stored reports without a kind are interpreted as missing by every read
@@ -52,6 +54,20 @@ create (author: User, title: String, kind: String, attributes: Attributes) : ret
   where kind, title and attributes are valid
   then
     add an open report with author, kind, trimmed title, and attributes
+    returns report
+
+update (author: User, report: Report, title: String, attributes: Attributes) : returns (report: Report)
+  where title is blank or longer than 120 characters, or attributes are invalid
+  then
+    refuses INVALID_REPORT "Check the report fields and time interval."
+  where report does not exist, is closed, or author is not its author
+  then
+    refuses REPORT_UNAVAILABLE "That report is unavailable."
+  where report is open, author is its author, and title and attributes are valid
+  then
+    replace its title with trimmed title and its attributes with the supplied attributes
+    trim colors, brand, and locations as on create
+    preserve its author, kind, identity, and open status
     returns report
 
 close (author: User, report: Report) : returns (report: Report)

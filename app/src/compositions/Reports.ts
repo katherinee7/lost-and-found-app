@@ -57,6 +57,15 @@ const closeInput: EndpointValidator = (value) =>
     ? { ok: true }
     : { ok: false, detail: "A report ID is required." };
 
+const updateInput: EndpointValidator = (value) =>
+  object(value) &&
+  hasSession(value) &&
+  typeof value.report === "string" && value.report.length > 0 && value.report.length <= 128 &&
+  typeof value.title === "string" && value.title.trim().length > 0 && value.title.length <= 120 &&
+  validAttributes(value.attributes)
+    ? { ok: true }
+    : { ok: false, detail: "Check the report fields." };
+
 const reportOutput: EndpointValidator = (value) =>
   object(value) && typeof value.report === "string"
     ? { ok: true }
@@ -125,6 +134,20 @@ const Create = endpoint(
       input: createInput,
       output: reportOutput,
     },
+  },
+);
+
+const Update = endpoint(
+  "/reports/update",
+  ({ session, author, report, title, attributes }) =>
+    receive({ session, report, title, attributes })
+      .then(Authenticating.authenticate({ session }).responds({ user: author }))
+      .then(ItemReporting.update({ author, report, title, attributes }).responds({ report }))
+      .then(Matching.register({ record: report, attributes }))
+      .then(respond({ report })),
+  {
+    input: { required: ["session", "report", "title", "attributes"] },
+    validators: { input: updateInput, output: reportOutput },
   },
 );
 
@@ -272,6 +295,7 @@ const Matches = endpoint(
 export const composition = {
   OwnReports,
   Create,
+  Update,
   List,
   Close,
   SearchResults,

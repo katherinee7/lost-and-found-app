@@ -76,6 +76,22 @@ export function validAttributes(
   );
 }
 
+function normalizedAttributes(attributes: Attributes): Attributes {
+  return {
+    category: attributes.category,
+    colors: attributes.colors.map((color) => color.trim()),
+    brand: attributes.brand.trim(),
+    start: attributes.start,
+    end: attributes.end,
+    locations: attributes.locations.map((location) => location.trim()),
+  };
+}
+
+function validContent(title: unknown, attributes: unknown): boolean {
+  return typeof title === "string" && !!title.trim() &&
+    title.length <= 120 && validAttributes(attributes);
+}
+
 export class ItemReportingConcept {
   private readonly reports: Collection<ReportDocument>;
 
@@ -97,10 +113,7 @@ export class ItemReportingConcept {
   }) {
     if (
       (kind !== "missing" && kind !== "found") ||
-      typeof title !== "string" ||
-      !title.trim() ||
-      title.length > 120 ||
-      !validAttributes(attributes)
+      !validContent(title, attributes)
     ) {
       throw new InvalidReport(
         "Check the report fields and time interval.",
@@ -114,19 +127,29 @@ export class ItemReportingConcept {
       author,
       kind,
       title: title.trim(),
-      attributes: {
-        category: attributes.category,
-        colors: attributes.colors.map((color) => color.trim()),
-        brand: attributes.brand.trim(),
-        start: attributes.start,
-        end: attributes.end,
-        locations: attributes.locations.map(
-          (location) => location.trim(),
-        ),
-      },
+      attributes: normalizedAttributes(attributes),
       open: true,
     });
 
+    return { report };
+  }
+
+  async update({ author, report, title, attributes }: {
+    author: string;
+    report: string;
+    title: string;
+    attributes: Attributes;
+  }) {
+    if (!validContent(title, attributes)) {
+      throw new InvalidReport("Check the report fields and time interval.");
+    }
+    const result = await this.reports.updateOne(
+      { _id: report, author, open: true },
+      { $set: { title: title.trim(), attributes: normalizedAttributes(attributes) } },
+    );
+    if (result.matchedCount === 0) {
+      throw new ReportUnavailable("That report is unavailable.");
+    }
     return { report };
   }
 

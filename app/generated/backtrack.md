@@ -37,6 +37,9 @@ Defined in [ItemReporting](../design/concepts/ItemReporting.md), line 1.
 
 - `create(author: User, title: String, kind: String, attributes: Attributes) : returns (report: Report)`
   - Refuses `INVALID_REPORT`: Check the report fields and time interval.
+- `update(author: User, report: Report, title: String, attributes: Attributes) : returns (report: Report)`
+  - Refuses `INVALID_REPORT`: Check the report fields and time interval.
+  - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
 - `close(author: User, report: Report) : returns (report: Report)`
   - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
 - `readFound(author: User, report: Report) : returns (attributes: Attributes)`
@@ -104,7 +107,7 @@ _the authored explanation; this section records the generated shape._
 ### limited summaries of compatible open reports
 
 Authored path: `Reports.SearchResults`.
-- Covered by [Reports](../design/compositions/Reports.md), line 16.
+- Covered by [Reports](../design/compositions/Reports.md), line 17.
 
 ```former
 Former "limited summaries of compatible open reports" — inputs (attributes, user); bindings (report, title, category, start, end, locations); promises exactly one record — forms:
@@ -137,7 +140,7 @@ Former "the authenticated user's conversations" — inputs (user); bindings (con
 ### the authenticated user's reports
 
 Authored path: `Reports.OwnReports`.
-- Covered by [Reports](../design/compositions/Reports.md), line 11.
+- Covered by [Reports](../design/compositions/Reports.md), line 12.
 
 ```former
 Former "the authenticated user's reports" — inputs (author); bindings (report, title, kind, attributes, open); promises exactly one record — forms:
@@ -438,8 +441,8 @@ then
 ### Reports.Close
 
 Authored path: `Reports.Close`.
-- Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 51.
+- Covered by [Reports](../design/compositions/Reports.md), line 6.
+- Covered by [Reports](../design/compositions/Reports.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/close", report, requestId, session)
@@ -450,8 +453,8 @@ then
 ### Reports.Close#2
 
 Authored path: `Reports.Close`.
-- Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 51.
+- Covered by [Reports](../design/compositions/Reports.md), line 6.
+- Covered by [Reports](../design/compositions/Reports.md), line 66.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Close
@@ -464,8 +467,8 @@ then
 ### Reports.Close#3
 
 Authored path: `Reports.Close`.
-- Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 51.
+- Covered by [Reports](../design/compositions/Reports.md), line 6.
+- Covered by [Reports](../design/compositions/Reports.md), line 66.
 
 ```reaction
 when ItemReporting.close (author, report), asked by Reports.Close#2
@@ -476,8 +479,8 @@ then
 ### Reports.Close#4
 
 Authored path: `Reports.Close`.
-- Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 51.
+- Covered by [Reports](../design/compositions/Reports.md), line 6.
+- Covered by [Reports](../design/compositions/Reports.md), line 66.
 
 ```reaction
 when Matching.remove (record: report), asked by Reports.Close#3
@@ -491,7 +494,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 49.
+- Covered by [Reports](../design/compositions/Reports.md), line 63.
 
 ```reaction
 when RequestBoundary.request (attributes, kind, path: "/reports/create", requestId, session, title)
@@ -503,7 +506,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 49.
+- Covered by [Reports](../design/compositions/Reports.md), line 63.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Create
@@ -517,7 +520,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 49.
+- Covered by [Reports](../design/compositions/Reports.md), line 63.
 
 ```reaction
 when ItemReporting.create (attributes, author, kind, title, report), asked by Reports.Create#2
@@ -529,7 +532,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 49.
+- Covered by [Reports](../design/compositions/Reports.md), line 63.
 
 ```reaction
 when Matching.register (attributes, record: report), asked by Reports.Create#3
@@ -543,7 +546,7 @@ then
 
 Authored path: `Reports.List`.
 - Covered by [Reports](../design/compositions/Reports.md), line 4.
-- Covered by [Reports](../design/compositions/Reports.md), line 50.
+- Covered by [Reports](../design/compositions/Reports.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/list", requestId, session)
@@ -555,7 +558,7 @@ then
 
 Authored path: `Reports.List`.
 - Covered by [Reports](../design/compositions/Reports.md), line 4.
-- Covered by [Reports](../design/compositions/Reports.md), line 50.
+- Covered by [Reports](../design/compositions/Reports.md), line 65.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.List
@@ -568,8 +571,8 @@ then
 ### Reports.Matches
 
 Authored path: `Reports.Matches`.
-- Covered by [Reports](../design/compositions/Reports.md), line 28.
-- Covered by [Reports](../design/compositions/Reports.md), line 53.
+- Covered by [Reports](../design/compositions/Reports.md), line 29.
+- Covered by [Reports](../design/compositions/Reports.md), line 68.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/matches", report, requestId, session)
@@ -580,8 +583,8 @@ then
 ### Reports.Matches#2
 
 Authored path: `Reports.Matches`.
-- Covered by [Reports](../design/compositions/Reports.md), line 28.
-- Covered by [Reports](../design/compositions/Reports.md), line 53.
+- Covered by [Reports](../design/compositions/Reports.md), line 29.
+- Covered by [Reports](../design/compositions/Reports.md), line 68.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Reports.Matches
@@ -594,8 +597,8 @@ then
 ### Reports.Matches#3
 
 Authored path: `Reports.Matches`.
-- Covered by [Reports](../design/compositions/Reports.md), line 28.
-- Covered by [Reports](../design/compositions/Reports.md), line 53.
+- Covered by [Reports](../design/compositions/Reports.md), line 29.
+- Covered by [Reports](../design/compositions/Reports.md), line 68.
 
 ```reaction
 when ItemReporting.readFound (author: user, report, attributes), asked by Reports.Matches#2
@@ -608,8 +611,8 @@ then
 ### Reports.Search
 
 Authored path: `Reports.Search`.
-- Covered by [Reports](../design/compositions/Reports.md), line 14.
-- Covered by [Reports](../design/compositions/Reports.md), line 52.
+- Covered by [Reports](../design/compositions/Reports.md), line 15.
+- Covered by [Reports](../design/compositions/Reports.md), line 67.
 
 ```reaction
 when RequestBoundary.request (attributes, path: "/reports/search", requestId, session)
@@ -620,8 +623,8 @@ then
 ### Reports.Search#2
 
 Authored path: `Reports.Search`.
-- Covered by [Reports](../design/compositions/Reports.md), line 14.
-- Covered by [Reports](../design/compositions/Reports.md), line 52.
+- Covered by [Reports](../design/compositions/Reports.md), line 15.
+- Covered by [Reports](../design/compositions/Reports.md), line 67.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Reports.Search
@@ -629,6 +632,58 @@ where
   earlier, RequestBoundary.request (attributes, path: "/reports/search", requestId, session)
 then
   RequestBoundary.respond (requestId, results: former "limited summaries of compatible open reports" with (attributes, user))
+```
+
+### Reports.Update
+
+Authored path: `Reports.Update`.
+- Covered by [Reports](../design/compositions/Reports.md), line 5.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
+
+```reaction
+when RequestBoundary.request (attributes, path: "/reports/update", report, requestId, session, title)
+then
+  Authenticating.authenticate (session)
+```
+
+### Reports.Update#2
+
+Authored path: `Reports.Update`.
+- Covered by [Reports](../design/compositions/Reports.md), line 5.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
+
+```reaction
+when Authenticating.authenticate (session, user: author), asked by Reports.Update
+where
+  earlier, RequestBoundary.request (attributes, path: "/reports/update", report, requestId, session, title)
+then
+  ItemReporting.update (attributes, author, report, title)
+```
+
+### Reports.Update#3
+
+Authored path: `Reports.Update`.
+- Covered by [Reports](../design/compositions/Reports.md), line 5.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
+
+```reaction
+when ItemReporting.update (attributes, author, report, title), asked by Reports.Update#2
+then
+  Matching.register (attributes, record: report)
+```
+
+### Reports.Update#4
+
+Authored path: `Reports.Update`.
+- Covered by [Reports](../design/compositions/Reports.md), line 5.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
+
+```reaction
+when Matching.register (attributes, record: report), asked by Reports.Update#3
+where
+  earlier, RequestBoundary.request (attributes, path: "/reports/update", report, requestId, session, title)
+then
+  RequestBoundary.respond (report, requestId)
 ```
 
 ## Endpoint input contracts
@@ -651,3 +706,4 @@ not listed here have no explicit input contract.
 - `/reports/list` — requires `session`
 - `/reports/matches` — requires `session`, `report`
 - `/reports/search` — requires `session`, `attributes`
+- `/reports/update` — requires `session`, `report`, `title`, `attributes`

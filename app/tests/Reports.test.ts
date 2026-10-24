@@ -165,3 +165,69 @@ test("later matching uses stored found attributes and includes legacy missing re
       start: attributes.start, end: attributes.end, locations: attributes.locations },
   ]);
 });
+
+test("editing missing reports updates search and saved-found matches before responding", async () => {
+  const owner = await account("owner");
+  const finder = await account("finder");
+  const { report: found } = await post("/reports/create", { session: finder.session, kind: "found", title: "Found", attributes });
+  const { report } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Wrong color", attributes: { ...attributes, colors: ["red"] } });
+  const search = () => post("/reports/search", { session: finder.session, attributes });
+  const matches = () => post("/reports/matches", { session: finder.session, report: found });
+  expect((await search()).results.matches).toEqual([]);
+  expect((await matches()).results.matches).toEqual([]);
+  // Also exercise editing existing P2 documents without a stored kind.
+  await db.collection("itemreporting.reports").updateOne({ _id: report }, { $unset: { kind: "" } });
+  expect(await post("/reports/update", { session: owner.session, report, title: "Corrected calculator", attributes })).toEqual({ report });
+  const expected = [{ report, title: "Corrected calculator", category: attributes.category, start: attributes.start, end: attributes.end, locations: attributes.locations }];
+  expect((await search()).results.matches).toEqual(expected);
+  expect((await matches()).results.matches).toEqual(expected);
+  expect((await post("/reports/list", { session: owner.session })).book.reports[0].kind).toBe("missing");
+  const changed = { ...attributes, locations: ["Gym"] };
+  await post("/reports/update", { session: owner.session, report, title: "Moved location", attributes: changed });
+  expect((await search()).results.matches).toEqual([]);
+  expect((await matches()).results.matches).toEqual([]);
+  expect((await db.collection("matching.entries").findOne({ _id: report }))?.attributes).toEqual(changed);
+});
+
+test("editing found records adds and removes current potential matches", async () => {
+  const owner = await account("owner");
+  const finder = await account("finder");
+  const { report: missing } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Missing", attributes });
+  const { report } = await post("/reports/create", { session: finder.session, kind: "found", title: "Found", attributes: { ...attributes, brand: "Other" } });
+  const matches = () => post("/reports/matches", { session: finder.session, report });
+  expect((await matches()).results.matches).toEqual([]);
+  await post("/reports/update", { session: finder.session, report, title: "Updated found", attributes, kind: "missing", author: owner.user, open: false });
+  expect((await matches()).results.matches.map((r: { report: string }) => r.report)).toEqual([missing]);
+  expect((await post("/reports/list", { session: finder.session })).book.reports).toEqual([
+    { report, kind: "found", title: "Updated found", attributes, open: true },
+  ]);
+  expect((await db.collection("matching.entries").findOne({ _id: report }))?.attributes).toEqual(attributes);
+  await post("/reports/update", { session: finder.session, report, title: "Updated again", attributes: { ...attributes, colors: ["red"] } });
+  expect((await matches()).results.matches).toEqual([]);
+});
+
+test("unauthorized, invalid, and closed edits leave reporting and matching unchanged", async () => {
+  const owner = await account("owner");
+  const stranger = await account("stranger");
+  for (const kind of ["missing", "found"]) {
+    const { report } = await post("/reports/create", { session: owner.session, kind, title: "Original", attributes });
+    const originalReport = await db.collection("itemreporting.reports").findOne({ _id: report });
+    const originalEntry = await db.collection("matching.entries").findOne({ _id: report });
+    const edit = { session: owner.session, report, title: "Edited", attributes: { ...attributes, colors: ["red"] } };
+    for (const changed of [{ title: " " }, { title: "x".repeat(121) }, { attributes: { ...attributes, end: "bad" } }, { attributes: { ...attributes, colors: [""] } }]) {
+      expect((await post("/reports/update", { ...edit, ...changed })).error).toBe("INVALID_REQUEST");
+      expect(await db.collection("itemreporting.reports").findOne({ _id: report })).toEqual(originalReport);
+      expect(await db.collection("matching.entries").findOne({ _id: report })).toEqual(originalEntry);
+    }
+    expect((await post("/reports/update", { ...edit, session: stranger.session, author: owner.user })).error).toBe("NOT_FOUND");
+    expect((await post("/reports/update", { ...edit, session: "invented" })).error).toBe("UNAUTHORIZED");
+    expect((await post("/reports/update", { ...edit, report: "unknown" })).error).toBe("NOT_FOUND");
+    expect(await db.collection("itemreporting.reports").findOne({ _id: report })).toEqual(originalReport);
+    expect(await db.collection("matching.entries").findOne({ _id: report })).toEqual(originalEntry);
+    await post("/reports/close", { session: owner.session, report });
+    const closed = await db.collection("itemreporting.reports").findOne({ _id: report });
+    expect((await post("/reports/update", edit)).error).toBe("NOT_FOUND");
+    expect(await db.collection("itemreporting.reports").findOne({ _id: report })).toEqual(closed);
+    expect(await db.collection("matching.entries").findOne({ _id: report })).toBeNull();
+  }
+});

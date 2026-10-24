@@ -173,3 +173,39 @@ test("readFound returns attributes only to the author of an open found record", 
   await reporting.close({ author: "finder", report });
   await expect(reporting.readFound({ author: "finder", report })).rejects.toBeInstanceOf(ReportUnavailable);
 });
+
+test("authors can update open missing and found reports without changing identity or kind", async () => {
+  for (const kind of ["missing", "found"] as const) {
+    const { report } = await reporting.create({ author: "owner", kind, title: "Original", attributes });
+    const changed = { ...attributes, colors: [" red "], brand: " New brand ", locations: [" Gym "] };
+    expect(await reporting.update({ author: "owner", report, title: " Edited ", attributes: changed })).toEqual({ report });
+    const expected = { report, kind, title: "Edited", attributes: { ...changed, colors: ["red"], brand: "New brand", locations: ["Gym"] }, open: true };
+    expect(await new ItemReportingConcept(db)._own({ author: "owner" })).toContainEqual(expected);
+    await reporting.update({ author: "owner", report, title: "Edited", attributes: expected.attributes });
+    expect(await reporting._own({ author: "owner" })).toContainEqual(expected);
+  }
+});
+
+test("invalid edits, strangers, and closed reports leave report data unchanged", async () => {
+  const { report } = await reporting.create({ author: "owner", kind: "found", title: "Original", attributes });
+  const original = await reporting._own({ author: "owner" });
+  for (const changed of [
+    { title: " " }, { title: "x".repeat(121) },
+    { attributes: { ...attributes, category: "Invalid" } },
+    { attributes: { ...attributes, start: "bad" } },
+    { attributes: { ...attributes, end: "2026-10-17T10:00:00Z" } },
+    { attributes: { ...attributes, colors: [""] } },
+    { attributes: { ...attributes, locations: ["x".repeat(101)] } },
+    { attributes: { ...attributes, brand: "x".repeat(101) } },
+  ]) {
+    await expect(reporting.update({ author: "owner", report, title: "Edited", attributes, ...changed })).rejects.toBeInstanceOf(InvalidReport);
+    expect(await reporting._own({ author: "owner" })).toEqual(original);
+  }
+  await expect(reporting.update({ author: "stranger", report, title: "Edited", attributes })).rejects.toBeInstanceOf(ReportUnavailable);
+  await expect(reporting.update({ author: "owner", report: "unknown", title: "Edited", attributes })).rejects.toBeInstanceOf(ReportUnavailable);
+  expect(await reporting._own({ author: "owner" })).toEqual(original);
+  await reporting.close({ author: "owner", report });
+  const closed = await reporting._own({ author: "owner" });
+  await expect(reporting.update({ author: "owner", report, title: "Edited", attributes })).rejects.toBeInstanceOf(ReportUnavailable);
+  expect(await reporting._own({ author: "owner" })).toEqual(closed);
+});
