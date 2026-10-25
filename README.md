@@ -21,7 +21,7 @@ and coordinate the return of lost belongings.
 
 - [Live app](https://backtrack.mit-sdg.dev/)
 - [Updated user journey](p3.md#core-user-journey)
-- [Demo video on YouTube](YOUR_VIDEO_LINK)
+- [Demo video on YouTube](https://youtu.be/K1QgDSjdvWE)
 - [Visual design study](images/visual_study.pdf)
 - [Specifications](app/design/)
 - [Automated tests](app/tests/)
