@@ -1,6 +1,7 @@
 import {
   afterAll,
   beforeAll,
+  beforeEach,
   expect,
   test,
 } from "bun:test";
@@ -18,7 +19,7 @@ const db = client.db(
   `backtrack_test_${crypto.randomUUID().replaceAll("-", "")}`,
 );
 
-const matching = new MatchingConcept(db);
+let matching: MatchingConcept;
 
 const attributes = {
   category: "Electronics",
@@ -31,6 +32,11 @@ const attributes = {
 
 beforeAll(async () => {
   await client.connect();
+});
+
+beforeEach(async () => {
+  await db.dropDatabase();
+  matching = new MatchingConcept(db);
 });
 
 afterAll(async () => {
@@ -60,6 +66,9 @@ test("matches compatible records and normalizes text", async () => {
 });
 
 test("excludes incompatible characteristics", async () => {
+  await matching.register({ record: "calculator", attributes });
+  expect(await matching._search({ attributes })).toEqual([{ record: "calculator" }]);
+
   for (const changed of [
     { category: "Bags" },
     { colors: ["red"] },
@@ -79,6 +88,8 @@ test("excludes incompatible characteristics", async () => {
 });
 
 test("unspecified optional characteristics do not exclude matches", async () => {
+  await matching.register({ record: "calculator", attributes });
+
   const results = await matching._search({
     attributes: {
       ...attributes,

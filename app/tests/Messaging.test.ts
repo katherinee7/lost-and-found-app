@@ -1,6 +1,7 @@
 import {
   afterAll,
   beforeAll,
+  beforeEach,
   expect,
   test,
 } from "bun:test";
@@ -20,10 +21,15 @@ const db = client.db(
   `backtrack_test_${crypto.randomUUID().replaceAll("-", "")}`,
 );
 
-const messaging = new MessagingConcept(db);
+let messaging: MessagingConcept;
 
 beforeAll(async () => {
   await client.connect();
+});
+
+beforeEach(async () => {
+  await db.dropDatabase();
+  messaging = new MessagingConcept(db);
 });
 
 afterAll(async () => {

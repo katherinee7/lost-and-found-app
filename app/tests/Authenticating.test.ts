@@ -1,6 +1,7 @@
 import {
   afterAll,
   beforeAll,
+  beforeEach,
   expect,
   test,
 } from "bun:test";
@@ -24,10 +25,15 @@ const client = new MongoClient(url);
 const db = client.db(
   `backtrack_test_${crypto.randomUUID().replaceAll("-", "")}`,
 );
-const auth = new AuthenticatingConcept(db);
+let auth: AuthenticatingConcept;
 
 beforeAll(async () => {
   await client.connect();
+});
+
+beforeEach(async () => {
+  await db.dropDatabase();
+  auth = new AuthenticatingConcept(db);
 });
 
 afterAll(async () => {

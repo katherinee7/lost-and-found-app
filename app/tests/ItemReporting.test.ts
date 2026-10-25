@@ -20,7 +20,7 @@ const db = client.db(
   `backtrack_test_${crypto.randomUUID().replaceAll("-", "")}`,
 );
 
-const reporting = new ItemReportingConcept(db);
+let reporting: ItemReportingConcept;
 
 const attributes = {
   category: "Electronics",
@@ -37,6 +37,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await db.dropDatabase();
+  reporting = new ItemReportingConcept(db);
 });
 
 afterAll(async () => {

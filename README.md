@@ -21,6 +21,7 @@ and coordinate the return of lost belongings.
 
 - [Live app](https://backtrack.mit-sdg.dev/)
 - [Updated user journey](p3.md#core-user-journey)
+- [Demo video on YouTube](YOUR_VIDEO_LINK)
 - [Visual design study](images/visual_study.pdf)
 - [Specifications](app/design/)
 - [Automated tests](app/tests/)
@@ -74,6 +75,12 @@ bun run build
 ```
 
 Tests use `MONGODB_URL` from `app/.env`, create temporary test
-databases, and remove them afterward.
+databases, and remove them afterward. Before each database test, the suite
+clears its temporary database and recreates its concept instances or application
+assembly. Each test creates its own required data through concept actions.
+The application database is not cleared or modified.
 
 [Saved test output](app/tests/results/)
+
+Latest complete runs: [standard order](app/tests/results/final-tests.txt) and
+[randomized order, seed 61040](app/tests/results/final-tests-randomized.txt).
