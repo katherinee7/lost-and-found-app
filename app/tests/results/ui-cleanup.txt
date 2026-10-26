@@ -1,0 +1,12 @@
+Final UI cleanup verification
+
+PASS: Vue type checking and production build.
+PASS: production-build browser checks using mocked API responses (no database access).
+Verified saved found items default to open only; closing hides the item and shows
+Show closed guidance; checking Show closed reveals the read-only record and
+unchecking hides it again. Both report kinds share this filtering implementation.
+Also verified save/view, edit/cancel, closure confirmation (Cancel, Escape,
+default focus, acceptance), search draft preservation and section heading focus.
+No runtime errors or horizontal overflow at 1280px, 360px and 320px.
+
+This is UI verification, not a deployed/backend integration test.

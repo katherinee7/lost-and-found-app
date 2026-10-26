@@ -16,7 +16,15 @@ const loading = ref(true);
 const busy = ref(false);
 const error = ref("");
 const unavailable = ref("");
-const feedback = ref("");
+const summary = computed(() => {
+  if (loading.value) return "Loading…";
+  if (error.value) return "Status unavailable";
+  if (unavailable.value) return "Unavailable here";
+  if (status.value?.rewarded) return "Return complete";
+  if (!status.value?.registered) return status.value?.role === "recipient" ? "Owner starts here" : "Waiting for owner to start";
+  if (ownConfirmed.value) return status.value?.role === "recipient" ? "Waiting for finder" : "Waiting for owner";
+  return "Your confirmation needed";
+});
 let disposed = false;
 let version = 0;
 const ownConfirmed = computed(() => status.value?.role === "recipient"
@@ -25,7 +33,7 @@ const ownConfirmed = computed(() => status.value?.role === "recipient"
 function apply(next: Status) {
   const changed = !status.value?.rewarded && next.rewarded;
   status.value = next;
-  if (next.rewarded) feedback.value = "";
+
   if (changed) emit("updated");
 }
 
@@ -61,7 +69,7 @@ async function act(action: "begin" | "confirm") {
   busy.value = true;
   ++version; // Ignore a status response that started before this action.
   error.value = "";
-  feedback.value = "";
+
   try {
     const input = { session: props.session, conversation: props.conversation };
     const result = action === "begin" ? await client.returns.begin(input) : await client.returns.confirm(input);
@@ -72,9 +80,6 @@ async function act(action: "begin" | "confirm") {
         : "Could not complete this request. Refresh the status, then retry if needed; confirmations and points are saved safely.");
     }
     apply(result.status);
-    feedback.value = result.status.rewarded
-      ? ""
-      : action === "begin" ? "Return confirmation started. Each participant must confirm separately." : "Your confirmation is saved. Waiting for the other participant.";
   } catch (caught) {
     if (!disposed) error.value = caught instanceof Error ? caught.message : "Could not save confirmation.";
   } finally {
@@ -88,31 +93,41 @@ defineExpose({ refresh });
 </script>
 
 <template>
-  <section class="return-panel" aria-labelledby="return-title" :aria-busy="busy || loading">
-    <div class="section-heading"><h4 id="return-title">Return confirmation</h4><button class="quiet" :disabled="busy || loading" @click="refresh">Refresh status</button></div>
-    <p v-if="loading" class="hint" role="status">Loading return status…</p>
-    <p v-else-if="unavailable" class="hint">{{ unavailable }}</p>
-    <template v-else-if="status">
-      <p v-if="status.rewarded" class="status" role="status">Return jointly confirmed. Finder awarded 1 point. Missing report closed.</p>
-      <template v-else-if="!status.registered">
-        <p class="hint">After the item is returned, the owner can start confirmation with this conversation’s finder. Both must confirm to award 1 point.</p>
-        <button v-if="status.role === 'recipient'" :disabled="busy" @click="act('begin')">{{ busy ? "Starting…" : "Start return confirmation" }}</button>
-        <p v-else class="hint">Waiting for the owner to start return confirmation.</p>
+  <details class="return-panel" :aria-busy="busy || loading">
+    <summary><span>Confirm return</span><span class="hint" role="status">{{ summary }}</span></summary>
+    <div class="return-content">
+      <p v-if="loading" class="hint">Loading return status…</p>
+      <p v-else-if="unavailable" class="hint">{{ unavailable }}</p>
+      <template v-else-if="status">
+        <p v-if="status.rewarded" class="status">Return confirmed by both people. Finder earned 1 point; missing report closed.</p>
+        <template v-else>
+          <p>After the handoff, the owner starts confirmation. Then both people confirm below.</p>
+          <p class="hint">Both confirmations close the missing report and award the finder 1 point.</p>
+          <template v-if="!status.registered">
+            <button v-if="status.role === 'recipient'" class="primary" :disabled="busy" @click="act('begin')">{{ busy ? "Starting…" : "Start confirmation" }}</button>
+            <p v-else class="hint">Ask the owner to start confirmation here after receiving the item.</p>
+          </template>
+          <template v-else>
+            <ul class="confirmation-list">
+              <li>Owner{{ status.role === 'recipient' ? ' (you)' : '' }}: {{ status.recipientConfirmed ? "Confirmed" : "Pending" }}</li>
+              <li>Finder{{ status.role === 'contributor' ? ' (you)' : '' }}: {{ status.contributorConfirmed ? "Confirmed" : "Pending" }}</li>
+            </ul>
+            <p v-if="ownConfirmed" class="hint">Your confirmation is saved. {{ status.role === 'recipient' ? 'The finder' : 'The owner' }} still needs to confirm.</p>
+            <button v-else class="primary" :disabled="busy" @click="act('confirm')">{{ busy ? "Saving…" : status.role === 'recipient' ? "I received my item" : "I returned the item" }}</button>
+          </template>
+          <p class="hint">Already closed the report? You can still confirm here. Saved found items close separately.</p>
+        </template>
       </template>
-      <template v-else>
-        <ul class="confirmation-list"><li>Owner: {{ status.recipientConfirmed ? "Confirmed" : "Not yet confirmed" }}</li><li>Finder: {{ status.contributorConfirmed ? "Confirmed" : "Not yet confirmed" }}</li></ul>
-        <p class="hint">Confirmation remains available if the report is manually closed. The finder closes any saved found record separately.</p>
-        <button :disabled="busy || ownConfirmed" @click="act('confirm')">{{ busy ? "Saving…" : ownConfirmed ? "You have confirmed" : "Confirm item returned" }}</button>
-      </template>
-    </template>
-    <p v-if="feedback" class="status" role="status">{{ feedback }}</p>
-    <p v-if="error" class="status error" role="alert">{{ error }}</p>
-  </section>
+      <p v-if="error" class="status error" role="alert">{{ error }}</p>
+      <button class="quiet" :disabled="busy || loading" @click="refresh">Refresh status</button>
+    </div>
+  </details>
 </template>
 
 <style scoped>
-.return-panel { margin-top: 24px; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: #fafbf7; }
-.return-panel .section-heading { margin-bottom: 8px; }
-.return-panel > button { margin-top: 12px; }
+.return-panel { margin-top: 20px; border: 1px solid var(--line); border-radius: 10px; background: #fafbf7; }
+.return-panel summary { padding: 14px 16px; cursor: pointer; font-weight: 600; }
+.return-panel summary .hint { display: inline-block; margin-left: 12px; font-weight: 400; }
+.return-content { padding: 0 16px 16px; }
 .confirmation-list { margin: 12px 0; padding-left: 20px; }
 </style>

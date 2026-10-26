@@ -20,8 +20,8 @@ record IDs from Matching with limited summaries of open missing reports.
 The create request supplies kind (missing or found), title, and attributes.
 Found records are saved from the current finder-search fields with a title
 based on category (for example, Found electronics). They are reviewed in
-My Reports under Saved found records, including all entered characteristics
-and their open/closed status. Missing reports have a separate list there.
+Find an Owner under Saved found items, including all entered characteristics
+and their open/closed status. Missing reports are managed separately in My Missing Reports.
 Only the authenticated author can list their full records or close them.
 Stored reports without kind are treated as missing. Found records cannot be
 contact targets, even if a caller knows their IDs.
@@ -73,3 +73,28 @@ Jointly confirmed returns close the missing report through the Returns compositi
 and remove its Matching entry. Manual Close remains available and never awards a
 point. Closed reports retain their data so registered participants can finish
 confirmation. Saved found records are closed separately by their authors.
+
+### Navigation
+
+My Missing Reports contains creation, review, editing, and manual closing of
+missing reports. Find an Owner groups Search for an owner and Saved found items.
+Saving offers a View saved items action; the saved section retains private
+characteristics, editing, closing, current match counts, and Contact owner.
+Opening the saved section or refreshing reloads records and matches. Switching
+sections preserves the current search draft and results. Record kinds and backend
+authorization are unchanged.
+
+Visible actions use Refresh reports for missing reports and Refresh matches for saved
+found items (which reloads both items and matches). Manual closure is labeled
+Close report to distinguish it from jointly confirmed returns that award points.
+
+Manual closing opens a modal confirmation with Cancel focused by default; Escape
+cancels. Both missing reports and saved found items use Close report.
+The confirmation explains that matches stop, details and conversations remain,
+reopening is unavailable, and no return or points are confirmed. Cancel sends no
+request; accepting uses the existing authenticated close endpoint.
+
+Both lists initially show open records only. Show closed includes closed records
+without changing stored data. After manual closure, feedback explains how to view
+the closed record. Page introductions use one short description; privacy and
+return-confirmation guidance remain next to the relevant actions.

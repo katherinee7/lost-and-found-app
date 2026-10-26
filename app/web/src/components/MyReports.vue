@@ -4,7 +4,7 @@ import { client } from "../client";
 import ReportFields from "./ReportFields.vue";
 import { attributesFromFields, emptyReportFields, prefillReport, type ReportAttributes as Attributes } from "../report-form";
 
-const props = defineProps<{ session: string }>();
+const props = withDefaults(defineProps<{ session: string; kind?: "missing" | "found" }>(), { kind: "missing" });
 
 interface Report {
   report: string;
@@ -35,9 +35,10 @@ const editError = ref("");
 const editPanel = ref<HTMLElement | null>(null);
 
 const reports = ref<Report[]>([]);
-const selectedKind = ref<"missing" | "found">("missing");
+const showClosed = ref(false);
+const ownReports = computed(() => reports.value.filter((report) => report.kind === props.kind));
 const visibleReports = computed(() =>
-  reports.value.filter((report) => report.kind === selectedKind.value),
+  ownReports.value.filter((report) => report.open || showClosed.value),
 );
 const busy = ref(false);
 const message = ref("");
@@ -57,7 +58,7 @@ async function load() {
   hasLoaded.value = true;
   matchesByReport.value = {};
   matchErrors.value = {};
-  const openFound = reports.value.filter((report) => report.kind === "found" && report.open);
+  const openFound = reports.value.filter((report) => props.kind === "found" && report.kind === "found" && report.open);
   const results = await Promise.allSettled(openFound.map(async ({ report }) => {
     const result = await client.reports.matches({ session: props.session, report });
     if ("error" in result) throw new Error(`Could not load matches: ${result.error}`);
@@ -170,6 +171,27 @@ async function saveEdit() {
   }
 }
 
+const closeDialog = ref<HTMLDialogElement | null>(null);
+const closing = ref<Report | null>(null);
+
+function requestClose(report: Report) {
+  if (busy.value || editing.value) return;
+  closing.value = report;
+  closeDialog.value?.showModal();
+}
+
+function cancelClose() {
+  closeDialog.value?.close();
+  closing.value = null;
+}
+
+async function confirmClose() {
+  const report = closing.value;
+  if (!report) return;
+  cancelClose();
+  await closeReport(report.report);
+}
+
 async function closeReport(report: string) {
   busy.value = true;
   message.value = "";
@@ -185,7 +207,7 @@ async function closeReport(report: string) {
       throw new Error(`Could not close report: ${result.error}`);
     }
     await load();
-    message.value = "Report closed.";
+    message.value = showClosed.value ? "Report closed." : "Report closed. Select Show closed to view it.";
   } catch (error) {
     messageError.value = true;
     message.value =
@@ -251,20 +273,31 @@ onMounted(async () => {
 
 <template>
   <section>
-    <header class="page-heading">
-      <p class="eyebrow">Your personal lost &amp; found</p>
-      <h2 tabindex="-1">My Reports</h2>
-      <p>Keep track of what’s missing and what you’ve found. Full record details are visible only to you.</p>
+    <dialog ref="closeDialog" class="close-dialog" aria-labelledby="close-title" aria-describedby="close-description" @cancel.prevent="cancelClose">
+      <h3 id="close-title">Close this report?</h3>
+      <p v-if="closing" class="hint">{{ closing.title }}</p>
+      <p id="close-description">{{ closing?.kind === "found"
+        ? "This item will stop checking for matches. Its details and conversations will remain available. You cannot reopen it."
+        : "This report will stop appearing in matches. Its details and conversations will remain available. You cannot reopen it." }}</p>
+      <p class="hint">This does not confirm a return or award points.</p>
+      <div class="actions">
+        <button type="button" autofocus @click="cancelClose">Cancel</button>
+        <button type="button" class="primary" @click="confirmClose">Close report</button>
+      </div>
+    </dialog>
+    <header v-if="kind === 'missing'" class="page-heading">
+      <h2 tabindex="-1">My Missing Reports</h2>
+      <p>Report a missing item and manage your reports.</p>
       <a class="mobile-record-jump" href="#records-heading">Jump to your records ↓</a>
     </header>
     <p v-if="message" class="status" :class="{ error: messageError }" :role="messageError ? 'alert' : 'status'">{{ message }}</p>
-    <div class="workspace">
-      <section class="panel" :aria-label="editing ? 'Edit report' : 'Create missing report'" ref="editPanel">
-        <h3>{{ editing ? (editing.kind === "found" ? "Edit found record" : "Edit missing report") : "Report a missing item" }}</h3>
-        <p class="hint">{{ editing ? "Update the details below, then save your changes." : "Add what you know. A finder can contact you about a potential match." }}</p>
+    <div :class="{ workspace: kind === 'missing' || !!editing }">
+      <section v-if="kind === 'missing' || editing" class="panel" :aria-label="editing ? 'Edit report' : 'Create missing report'" ref="editPanel">
+        <h3>{{ editing ? (editing.kind === "found" ? "Edit saved found item" : "Edit missing report") : "Report a missing item" }}</h3>
+        <p v-if="!editing" class="hint">Full details are private.</p>
         <form v-if="!editing" @submit.prevent="submit" :aria-busy="busy">
           <fieldset :disabled="busy"><legend class="sr-only">Missing item details</legend><ReportFields :fields="fields" /></fieldset>
-          <button class="primary" :disabled="busy">{{ busy ? "Please wait…" : "Create missing report" }}</button>
+          <button class="primary" :disabled="busy">{{ busy ? "Please wait…" : "Create report" }}</button>
         </form>
         <form v-else @submit.prevent="saveEdit" :aria-busy="busy">
           <fieldset :disabled="busy"><legend class="sr-only">Edit report details</legend><ReportFields :fields="editFields" /></fieldset>
@@ -276,16 +309,13 @@ onMounted(async () => {
         </form>
       </section>
       <section aria-labelledby="records-heading">
-        <div class="section-heading"><h3 id="records-heading" tabindex="-1">Your records</h3><button :disabled="busy || !!editing" @click="refresh">Refresh records and matches</button></div>
-        <div class="segmented" role="group" aria-label="Record kind">
-          <button :aria-pressed="selectedKind === 'missing'" @click="selectedKind = 'missing'">Missing reports</button>
-          <button :aria-pressed="selectedKind === 'found'" @click="selectedKind = 'found'">Saved found records</button>
-        </div>
-        <p v-if="selectedKind === 'found'" class="hint">Save found items from Find an Owner. Match counts update when this page loads or you refresh.</p>
-        <p v-if="busy" class="loading" role="status">Updating your records and matches…</p>
+        <div class="section-heading"><h3 id="records-heading" tabindex="-1">{{ kind === "found" ? "Saved found items" : "Your reports" }}</h3><button :disabled="busy || !!editing" @click="refresh">{{ kind === "found" ? "Refresh matches" : "Refresh reports" }}</button></div>
+        <label class="closed-filter"><input v-model="showClosed" type="checkbox" :disabled="busy || !!editing" /> Show closed</label>
+        <p v-if="kind === 'found'" class="hint">Private to you. Matches update when you open this section or select Refresh matches.</p>
+        <p v-if="busy" class="loading" role="status">{{ kind === "found" ? "Updating your saved items and matches…" : "Updating your missing reports…" }}</p>
         <div v-else-if="hasLoaded && !messageError && visibleReports.length === 0" class="empty-state">
-          <strong>{{ selectedKind === "found" ? "No saved found records yet." : "No missing reports yet." }}</strong>
-          {{ selectedKind === "found" ? "Use Find an Owner to search or save something you found." : "Use the form to create your first private missing report." }}
+          <strong>{{ ownReports.length ? "No open reports." : kind === "found" ? "No saved found items yet." : "No missing reports yet." }}</strong>
+          {{ ownReports.length ? "Select Show closed to view previous reports." : kind === "found" ? "Search and choose Save for later to keep an item here." : "Create your first private missing report." }}
         </div>
         <div class="records">
           <article v-for="report in visibleReports" :key="report.report" class="record-card">
@@ -316,9 +346,9 @@ onMounted(async () => {
             </section>
             <div v-if="report.open" class="actions">
               <button :id="`edit-${report.report}`" :disabled="busy || !!editing" :aria-label="`Edit ${report.title}`" @click="startEditing(report)">Edit</button>
-              <button class="quiet danger" :disabled="busy || !!editing" :aria-label="`${report.kind === 'found' ? 'Close found record' : 'Mark returned / close'}: ${report.title}`" @click="closeReport(report.report)">{{ report.kind === "found" ? "Close found record" : "Mark returned / close" }}</button>
+              <button class="quiet danger" :disabled="busy || !!editing" :aria-label="`Close report: ${report.title}`" @click="requestClose(report)">Close report</button>
             </div>
-            <p v-else class="hint" style="margin-top: 16px">Closed records are read-only. Existing conversations remain in Messages.</p>
+            <p v-else class="hint" style="margin-top: 16px">Closed · Read-only. Conversations remain in Messages.</p>
           </article>
         </div>
       </section>

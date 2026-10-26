@@ -199,9 +199,8 @@ onUnmounted(() => {
 <template>
   <section>
     <header class="page-heading">
-      <p class="eyebrow">Make a connection</p>
       <h2 tabindex="-1">Messages</h2>
-      <p>Compare details privately and arrange a return. Conversations stay available after a report closes.</p>
+      <p>Compare details and arrange a return.</p>
     </header>
     <p v-if="error" class="status error" role="alert">{{ error }}</p>
     <div class="message-layout">
@@ -230,14 +229,14 @@ onUnmounted(() => {
               <time :datetime="message.sentAt">{{ new Date(message.sentAt).toLocaleString() }}</time>
             </article>
           </div>
-          <ReturnConfirmation :key="selected" ref="returnPanel" :session="session" :conversation="selected" @updated="emit('return-updated')" />
           <form class="composer" @submit.prevent="send" :aria-busy="busy">
             <label for="message">Your message</label>
             <textarea id="message" v-model="draft" maxlength="2000" rows="3" aria-describedby="message-help" required :disabled="busy || reading" />
             <p id="message-help" class="hint">Up to 2,000 characters. Keep personal details private.</p>
             <p v-if="composeError" class="status error" role="alert">{{ composeError }}</p>
-            <button class="primary" :disabled="busy || reading || !draft.trim()">{{ busy ? "Sending…" : "Send message" }}</button>
+            <button class="primary" :disabled="busy || reading || !draft.trim()">{{ busy ? "Sending…" : "Send" }}</button>
           </form>
+          <ReturnConfirmation :key="selected" ref="returnPanel" :session="session" :conversation="selected" @updated="emit('return-updated')" />
         </template>
         <div v-else class="empty-state"><strong>A conversation starts with a match.</strong>Choose a conversation to read and reply.</div>
       </section>

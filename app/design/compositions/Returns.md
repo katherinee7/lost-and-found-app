@@ -48,3 +48,13 @@ Returns.Confirm at /returns/confirm
 Returns.Status at /returns/status
 Returns.Balance at /returns/balance
 ```
+
+### Confirmation interface
+
+An expandable Confirm return section follows the message composer, keeping replies
+next to message history. Its summary shows who acts next or Return complete.
+The owner selects Start confirmation after the handoff; each participant then
+selects I received my item or I returned the item. Pending status identifies the
+current user and the other role. Both confirmations are required; starting alone
+is not a confirmation. The section explains points, report closure, and separate
+closure of saved found items. Expansion uses native keyboard-accessible details.

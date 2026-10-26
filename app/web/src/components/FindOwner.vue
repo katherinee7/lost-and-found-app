@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { nextTick, reactive, ref } from "vue";
 import { client } from "../client";
 import type { ReportAttributes } from "../report-form";
 import ReportFields from "./ReportFields.vue";
+import MyReports from "./MyReports.vue";
 
 const props = defineProps<{ session: string }>();
 
@@ -24,6 +25,16 @@ const fields = reactive({
   end: "",
   locations: "",
 });
+
+const section = ref<"search" | "saved">("search");
+const saved = ref(false);
+const sectionContent = ref<HTMLElement | null>(null);
+
+async function showSection(destination: "search" | "saved") {
+  section.value = destination;
+  await nextTick();
+  sectionContent.value?.querySelector<HTMLElement>("h3[tabindex]")?.focus();
+}
 
 const matches = ref<Match[]>([]);
 const searchAttributes = ref<ReportAttributes | null>(null);
@@ -107,6 +118,7 @@ async function search() {
 async function saveForLater() {
   busy.value = true;
   saving.value = true;
+  saved.value = false;
   message.value = "";
   messageError.value = false;
   try {
@@ -123,7 +135,8 @@ async function saveForLater() {
           : `Could not save found record: ${result.error}`,
       );
     }
-    message.value = "Saved privately. Review or close it in My Reports → Saved found records.";
+    saved.value = true;
+    message.value = "Item saved privately.";
   } catch (error) {
     messageError.value = true;
     message.value = error instanceof Error ? error.message : "Could not save found record.";
@@ -177,23 +190,28 @@ async function contactOwner(report: string) {
 <template>
   <section>
     <header class="page-heading">
-      <p class="eyebrow">Found something?</p>
       <h2 tabindex="-1">Find an Owner</h2>
-      <p>Describe what you found. We’ll look for compatible missing reports without revealing their private details.</p>
+      <p>Search for an owner or save a found item for later.</p>
     </header>
-    <div class="workspace">
+    <div class="segmented" role="group" aria-label="Find an Owner sections">
+      <button :aria-pressed="section === 'search'" @click="showSection('search')">Search for an owner</button>
+      <button :aria-pressed="section === 'saved'" @click="showSection('saved')">Saved found items</button>
+    </div>
+    <div ref="sectionContent">
+    <MyReports v-if="section === 'saved'" :session="session" kind="found" @contact="emit('contact', $event)" />
+    <div v-show="section === 'search'" class="workspace">
       <section class="panel" aria-labelledby="finder-form-title">
-        <h3 id="finder-form-title">Describe the item</h3>
-        <p class="hint">Search now, or save the details to check for matches later.</p>
+        <h3 id="finder-form-title" tabindex="-1">Search for an owner</h3>
         <form @submit.prevent="search" :aria-busy="busy">
           <fieldset :disabled="busy"><legend class="sr-only">Found item characteristics</legend><ReportFields :fields="fields" :show-title="false" /></fieldset>
           <div class="actions">
-            <button class="primary" :disabled="busy">{{ searching ? "Searching…" : "Search for owner" }}</button>
+            <button class="primary" :disabled="busy">{{ searching ? "Searching…" : "Search" }}</button>
             <button type="button" :disabled="busy" @click="saveForLater">{{ saving ? "Saving…" : "Save for later" }}</button>
           </div>
-          <p class="hint">Saved records are private. Find them in My Reports → Saved found records.</p>
+          <p class="hint">Saved items are private.</p>
         </form>
         <p v-if="message" class="status" :class="{ error: messageError }" :role="messageError ? 'alert' : 'status'">{{ message }}</p>
+        <button v-if="saved" type="button" :disabled="busy" @click="showSection('saved')">View saved items</button>
       </section>
       <section aria-labelledby="results-heading" :aria-busy="searching">
         <div class="section-heading"><h3 id="results-heading">Potential owners</h3><span v-if="searched" class="badge">{{ matches.length }} results</span></div>
@@ -212,6 +230,7 @@ async function contactOwner(report: string) {
           </article>
         </div>
       </section>
+    </div>
     </div>
   </section>
 </template>

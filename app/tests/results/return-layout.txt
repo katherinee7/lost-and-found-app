@@ -1,0 +1,10 @@
+Return confirmation layout checks
+
+PASS: Vue type checking and production build.
+PASS: mocked production UI for owner and finder: collapsed by default, below
+composer, keyboard expansion, owner starts, role-specific confirmation buttons,
+waiting and completed states. No runtime errors or horizontal overflow at
+1280/360/320px. No database access.
+
+These checks verify UI presentation and requests with fixtures; they do not
+replace backend integration tests or verification on the deployed application.

@@ -137,3 +137,20 @@ dd { margin: 0; }
   .header-actions.logged-in { width: 100%; justify-content: space-between; }
   .header-actions.logged-in .hint { display: block; }
 }
+
+.close-dialog {
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 24px;
+  border: 1px solid #68786b;
+  border-radius: 16px;
+  color: #203b2e;
+  background: #fffdf7;
+}
+.close-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.close-dialog h3 { margin-top: 0; }
+
+.closed-filter { display: flex; align-items: center; gap: 8px; margin: 12px 0; }
+.closed-filter input { width: auto; margin: 0; }

@@ -11,7 +11,7 @@ const password = ref("");
 const userId = ref("");
 const session = ref(sessionStorage.getItem("session") ?? "");
 const mode = ref<"login" | "register">("login");
-const page = ref("My Reports");
+const page = ref("My Missing Reports");
 const message = ref("");
 const busy = ref(false);
 const messageError = ref(false);
@@ -19,14 +19,14 @@ const content = ref<HTMLElement | null>(null);
 
 const pointsVersion = ref(0);
 
-const pages = ["My Reports", "Find an Owner", "Messages"];
+const pages = ["My Missing Reports", "Find an Owner", "Messages"];
 
 function clearSession() {
   session.value = "";
   userId.value = "";
   sessionStorage.removeItem("session");
   selectedConversation.value = "";
-  page.value = "My Reports";
+  page.value = "My Missing Reports";
 }
 
 async function submit() {
@@ -230,7 +230,7 @@ function showConversation(conversation: string) {
         </section>
       </div>
       <template v-else>
-        <MyReports v-if="page === 'My Reports'" :session="session" @contact="showConversation" />
+        <MyReports v-if="page === 'My Missing Reports'" :session="session" @contact="showConversation" />
         <FindOwner v-else-if="page === 'Find an Owner'" :session="session" @contact="showConversation" />
         <Messages v-else-if="page === 'Messages'" :session="session" :user-id="userId" :initial-conversation="selectedConversation" @return-updated="pointsVersion++" />
       </template>
