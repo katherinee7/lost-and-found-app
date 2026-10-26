@@ -25,6 +25,8 @@ and coordinate the return of lost belongings.
 - [Visual design study](images/visual_study.pdf)
 - [Specifications](app/design/)
 - [Automated tests](app/tests/)
+- [Return confirmation behavior and retry handling](app/design/compositions/Returns.md)
+- [Manual return-confirmation checklist](app/tests/manual-returns.md)
 - [Saved test output](app/tests/results/)
 
 ## Setup

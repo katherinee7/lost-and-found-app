@@ -223,6 +223,14 @@ export class ItemReportingConcept {
     }];
   }
 
+  async returnInfo({ report }: { report: string }) {
+    const found = await this.reports.findOne({ _id: report });
+    if (!found || (found.kind ?? "missing") !== "missing") {
+      throw new ReportUnavailable("That report is unavailable.");
+    }
+    return { author: found.author, open: found.open };
+  }
+
   async _title({ report }: { report: string }) {
     const found = await this.reports.findOne({ _id: report }, { projection: { title: 1 } });
     return found ? [{ title: found.title }] : [];

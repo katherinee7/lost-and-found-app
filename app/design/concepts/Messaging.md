@@ -59,6 +59,15 @@ ensure (conversation: Conversation, first: User, second: User) : returns (conver
     preserve its participants and messages
     returns conversation
 
+checkParticipants (conversation: Conversation, first: User, second: User) : returns (conversation: Conversation)
+  where first equals second or conversation does not contain exactly these participants
+  then
+    refuses CONVERSATION_UNAVAILABLE "That conversation is unavailable."
+  where the conversation contains these two distinct participants in either order
+  then
+    preserve its messages
+    returns conversation
+
 send (sender: User, conversation: Conversation, text: String) : returns (message: String)
   where text is blank or longer than 2000 characters
   then

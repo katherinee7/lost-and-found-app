@@ -7,6 +7,10 @@ import {
   ref,
 } from "vue";
 import { client } from "../client";
+import ReturnConfirmation from "./ReturnConfirmation.vue";
+
+const emit = defineEmits<{ "return-updated": [] }>();
+const returnPanel = ref<InstanceType<typeof ReturnConfirmation> | null>(null);
 
 const props = defineProps<{
   session: string;
@@ -101,6 +105,7 @@ async function refresh() {
   try {
     await loadList();
     await loadMessages();
+    await returnPanel.value?.refresh();
 
     if (!disposed) error.value = "";
   } catch (caught) {
@@ -225,6 +230,7 @@ onUnmounted(() => {
               <time :datetime="message.sentAt">{{ new Date(message.sentAt).toLocaleString() }}</time>
             </article>
           </div>
+          <ReturnConfirmation :key="selected" ref="returnPanel" :session="session" :conversation="selected" @updated="emit('return-updated')" />
           <form class="composer" @submit.prevent="send" :aria-busy="busy">
             <label for="message">Your message</label>
             <textarea id="message" v-model="draft" maxlength="2000" rows="3" aria-describedby="message-help" required :disabled="busy || reading" />

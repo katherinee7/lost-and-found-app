@@ -10,6 +10,7 @@ export default {
   design: {
     version: 1,
     documents: [
+      new URL("./design/compositions/Returns.md", import.meta.url),
       new URL("./design/types.md", import.meta.url),
       new URL(
         "./design/compositions/Accounts.md",

@@ -37,6 +37,15 @@ a set of Links with
 ## Actions
 
 ```actions
+get (conversation: Conversation) : returns (context: Context, initiator: User)
+  where conversation has no link
+  then
+    refuses LINK_UNAVAILABLE "That conversation has no linked context."
+  where a link exists
+  then
+    bind context and initiator to the linked values
+    returns context, initiator
+
 resolve (initiator: User, context: Context) : returns (conversation: Conversation)
   where a link for initiator and context exists
   then

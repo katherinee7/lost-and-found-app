@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { MongoClient } from "mongodb";
-import { ConversationLinkingConcept } from "../src/concepts/ConversationLinking.ts";
+import { ConversationLinkingConcept, LinkUnavailable } from "../src/concepts/ConversationLinking.ts";
 
 const client = new MongoClient(process.env.MONGODB_URL!);
 const db = client.db(`backtrack_test_${crypto.randomUUID().replaceAll("-", "")}`);
@@ -27,4 +27,11 @@ test("simultaneous resolutions across instances converge without duplicate links
   const results = await Promise.all(instances.map((instance) => instance.resolve({ initiator: "finder", context: "report" })));
   expect(new Set(results.map((result) => result.conversation)).size).toBe(1);
   expect(await db.collection("conversationlinking.links").countDocuments()).toBe(1);
+});
+
+test("get returns a reserved context and initiator and rejects unlinked conversations", async () => {
+  const { conversation } = await linking.resolve({ initiator: "finder", context: "report" });
+  expect(await linking.get({ conversation })).toEqual({ initiator: "finder", context: "report" });
+  await expect(linking.get({ conversation: "unknown" })).rejects.toBeInstanceOf(LinkUnavailable);
+  expect(await linking._context({ conversation })).toEqual([{ context: "report" }]);
 });

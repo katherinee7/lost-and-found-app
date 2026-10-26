@@ -130,3 +130,10 @@ dd { margin: 0; }
 .skip-link:not(:focus) { clip-path: inset(50%); }
 .mobile-record-jump { display: none; }
 @media (max-width: 800px) { .mobile-record-jump { display: inline-flex; min-height: 44px; align-items: center; margin-top: 12px; } }
+
+.site-header { flex-wrap: wrap; }
+.header-actions { margin-left: auto; }
+@media (max-width: 600px) {
+  .header-actions.logged-in { width: 100%; justify-content: space-between; }
+  .header-actions.logged-in .hint { display: block; }
+}

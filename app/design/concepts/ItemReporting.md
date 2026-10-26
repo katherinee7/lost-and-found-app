@@ -88,6 +88,15 @@ readFound (author: User, report: Report) : returns (attributes: Attributes)
     bind attributes to the report's attributes
     returns attributes
 
+returnInfo (report: Report) : returns (author: User, open: Flag)
+  where report does not exist or is found
+  then
+    refuses REPORT_UNAVAILABLE "That report is unavailable."
+  where report is missing, including legacy records without kind
+  then
+    bind author and open to its values, including when closed
+    returns author, open
+
 contactTarget (requester: User, report: Report) : returns (owner: User)
   where report does not exist, is found, is closed, or belongs to requester
   then

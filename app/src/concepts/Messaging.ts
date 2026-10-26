@@ -84,6 +84,17 @@ export class MessagingConcept {
     return { conversation };
   }
 
+  async checkParticipants({ conversation, first, second }: {
+    conversation: string; first: string; second: string;
+  }) {
+    const found = first !== second && await this.conversations.findOne({
+      _id: conversation,
+      $or: [{ first, second }, { first: second, second: first }],
+    }, { projection: { _id: 1 } });
+    if (!found) throw new ConversationUnavailable("That conversation is unavailable.");
+    return { conversation };
+  }
+
   async send({
     sender,
     conversation,

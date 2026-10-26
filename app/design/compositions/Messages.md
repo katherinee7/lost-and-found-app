@@ -66,3 +66,8 @@ Messages.List at /messages/list
 Messages.Read at /messages/read
 Messages.Send at /messages/send
 ```
+
+Return recognition is coordinated by [Returns](Returns.md). Report-linked
+conversations show confirmation status and owner/finder actions without changing
+Messaging membership or making Messaging depend on reports or rewards. Unlinked
+legacy conversations keep their messages but cannot initiate recognition.

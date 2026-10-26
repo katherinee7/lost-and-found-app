@@ -1,5 +1,5 @@
 import linkingSpec from "../design/concepts/ConversationLinking.md" with { type: "text" };
-import { ConversationLinkingConcept } from "./concepts/ConversationLinking.ts";
+import { ConversationLinkingConcept, LinkUnavailable } from "./concepts/ConversationLinking.ts";
 import reportingSpec from "../design/concepts/ItemReporting.md" with { type: "text" };
 
 import {
@@ -81,7 +81,21 @@ const messaging = registerConcept({
   },
 });
 
-const conversationLinking = registerConcept({ class: ConversationLinkingConcept, spec: linkingSpec });
+const conversationLinking = registerConcept({
+  class: ConversationLinkingConcept, spec: linkingSpec,
+  refusals: { LINK_UNAVAILABLE: LinkUnavailable },
+});
+
+import rewardingSpec from "../design/concepts/ContributionRewarding.md" with { type: "text" };
+import { ContributionRewardingConcept, InvalidContribution, ContributionUnavailable, ContributionConflict } from "./concepts/ContributionRewarding.ts";
+const contributionRewarding = registerConcept({
+  class: ContributionRewardingConcept, spec: rewardingSpec,
+  refusals: {
+    INVALID_CONTRIBUTION: InvalidContribution,
+    CONTRIBUTION_UNAVAILABLE: ContributionUnavailable,
+    CONTRIBUTION_CONFLICT: ContributionConflict,
+  },
+});
 
 export const applicationConceptSet = conceptSet({
   Authenticating: authenticating,
@@ -89,6 +103,7 @@ export const applicationConceptSet = conceptSet({
   Matching: matching,
   Messaging: messaging,
   ConversationLinking: conversationLinking,
+  ContributionRewarding: contributionRewarding,
 });
 
 export const { concepts } = applicationConceptSet;

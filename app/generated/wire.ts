@@ -200,6 +200,51 @@ export type BacktrackWire = {
     };
     error: { error: AppWideError | "INVALID_INPUT" | "INVALID_MATCH_ATTRIBUTES" | "INVALID_REPORT" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
   };
+  "/returns/balance": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "points": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["balance"]>>, ["points"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "UNKNOWN_SESSION" };
+  };
+  "/returns/begin": {
+    input: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
+    };
+    error: { error: AppWideError | "CONTRIBUTION_CONFLICT" | "CONTRIBUTION_UNAVAILABLE" | "CONVERSATION_UNAVAILABLE" | "INVALID_CONTRIBUTION" | "INVALID_INPUT" | "LINK_UNAVAILABLE" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+  };
+  "/returns/confirm": {
+    input: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+    };
+    error: { error: AppWideError | "CONTRIBUTION_UNAVAILABLE" | "CONVERSATION_UNAVAILABLE" | "INVALID_INPUT" | "LINK_UNAVAILABLE" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+  };
+  "/returns/status": {
+    input: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
+    };
+    error: { error: AppWideError | "CONTRIBUTION_CONFLICT" | "CONTRIBUTION_UNAVAILABLE" | "CONVERSATION_UNAVAILABLE" | "INVALID_CONTRIBUTION" | "INVALID_INPUT" | "LINK_UNAVAILABLE" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+  };
 };
 
 export type HttpAppWideError = never;
@@ -390,5 +435,50 @@ export type BacktrackWireHttp = {
       "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["register"]>[0], ["record"]>>;
     };
     error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/returns/balance": {
+    input: {
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "points": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["balance"]>>, ["points"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "UNAUTHORIZED" };
+  };
+  "/returns/begin": {
+    input: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/returns/confirm": {
+    input: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/returns/status": {
+    input: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
+    };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
 };

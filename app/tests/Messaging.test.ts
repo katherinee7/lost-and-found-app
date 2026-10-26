@@ -202,3 +202,15 @@ test("ensure rejects self conversations or changed participants without changing
   expect(await db.collection("messaging.conversations").findOne({ _id: unused })).toBeNull();
   expect(await messaging.read({ user: "stable-b", conversation })).toEqual(original);
 });
+
+test("checkParticipants verifies the exact pair without changing a conversation", async () => {
+  const { conversation } = await messaging.create({ first: "owner", second: "finder" });
+  expect(await messaging.checkParticipants({ conversation, first: "owner", second: "finder" })).toEqual({ conversation });
+  expect(await messaging.checkParticipants({ conversation, first: "finder", second: "owner" })).toEqual({ conversation });
+  for (const input of [
+    { conversation, first: "owner", second: "stranger" },
+    { conversation, first: "owner", second: "owner" },
+    { conversation: "unknown", first: "owner", second: "finder" },
+  ]) await expect(messaging.checkParticipants(input)).rejects.toBeInstanceOf(ConversationUnavailable);
+  expect((await messaging.read({ user: "owner", conversation })).messages).toEqual([]);
+});

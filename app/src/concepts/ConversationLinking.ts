@@ -1,5 +1,7 @@
 import { MongoServerError, type Collection, type Db } from "mongodb";
 
+export class LinkUnavailable extends Error {}
+
 interface LinkDocument {
   _id: string;
   initiator: string;
@@ -34,6 +36,12 @@ export class ConversationLinkingConcept {
     const link = await this.links.findOne({ _id });
     if (!link) throw new Error("Conversation link was not created.");
     return { conversation: link.conversation };
+  }
+
+  async get({ conversation }: { conversation: string }) {
+    const link = await this.links.findOne({ conversation });
+    if (!link) throw new LinkUnavailable("That conversation has no linked context.");
+    return { context: link.context, initiator: link.initiator };
   }
 
   async _context({ conversation }: { conversation: string }) {

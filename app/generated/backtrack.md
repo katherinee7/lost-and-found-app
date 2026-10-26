@@ -33,12 +33,38 @@ Defined in [Authenticating](../design/concepts/Authenticating.md), line 1.
 
 - `Authenticating` — instance of `Authenticating` — [Application types](../design/types.md), line 6.
 
+### ContributionRewarding
+
+Defined in [ContributionRewarding](../design/concepts/ContributionRewarding.md), line 1.
+
+#### Actions
+
+- `register(user: User, contribution: Contribution, contributor: User, recipient: User) : returns (status: Status, rewarded: Flag, recipient: User)`
+  - Refuses `INVALID_CONTRIBUTION`: A contribution needs two distinct participants.
+  - Refuses `CONTRIBUTION_UNAVAILABLE`: Only the recipient can register this contribution.
+  - Refuses `CONTRIBUTION_CONFLICT`: This contribution is registered with another participant.
+- `confirm(user: User, contribution: Contribution, contributor: User) : returns (status: Status, rewarded: Flag, recipient: User)`
+  - Refuses `CONTRIBUTION_UNAVAILABLE`: That contribution is unavailable to you in this context.
+- `status(user: User, contribution: Contribution, contributor: User, recipient: User) : returns (status: Status, rewarded: Flag, recipient: User)`
+  - Refuses `INVALID_CONTRIBUTION`: A contribution needs two distinct participants.
+  - Refuses `CONTRIBUTION_UNAVAILABLE`: That contribution is unavailable to you in this context.
+  - Refuses `CONTRIBUTION_CONFLICT`: This contribution is registered with another participant.
+- `balance(user: User) : returns (points: Number)`
+
+#### Instances
+
+- `ContributionRewarding` — instance of `ContributionRewarding` — [Application types](../design/types.md), line 22.
+  - `Contribution` is `ItemReporting.Report` — [Application types](../design/types.md), line 24.
+  - `User` is `Authenticating.User` — [Application types](../design/types.md), line 23.
+
 ### ConversationLinking
 
 Defined in [ConversationLinking](../design/concepts/ConversationLinking.md), line 1.
 
 #### Actions
 
+- `get(conversation: Conversation) : returns (context: Context, initiator: User)`
+  - Refuses `LINK_UNAVAILABLE`: That conversation has no linked context.
 - `resolve(initiator: User, context: Context) : returns (conversation: Conversation)`
 
 #### Queries
@@ -66,6 +92,8 @@ Defined in [ItemReporting](../design/concepts/ItemReporting.md), line 1.
 - `close(author: User, report: Report) : returns (report: Report)`
   - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
 - `readFound(author: User, report: Report) : returns (attributes: Attributes)`
+  - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
+- `returnInfo(report: Report) : returns (author: User, open: Flag)`
   - Refuses `REPORT_UNAVAILABLE`: That report is unavailable.
 - `contactTarget(requester: User, report: Report) : returns (owner: User)`
   - Refuses `REPORT_UNAVAILABLE`: That report is unavailable or belongs to you.
@@ -113,6 +141,8 @@ Defined in [Messaging](../design/concepts/Messaging.md), line 1.
   - Refuses `INVALID_PARTICIPANTS`: Choose a different participant.
 - `ensure(conversation: Conversation, first: User, second: User) : returns (conversation: Conversation)`
   - Refuses `INVALID_PARTICIPANTS`: Choose a different participant.
+- `checkParticipants(conversation: Conversation, first: User, second: User) : returns (conversation: Conversation)`
+  - Refuses `CONVERSATION_UNAVAILABLE`: That conversation is unavailable.
 - `send(sender: User, conversation: Conversation, text: String) : returns (message: String)`
   - Refuses `INVALID_MESSAGE`: Messages must contain 1–2000 characters.
   - Refuses `CONVERSATION_UNAVAILABLE`: That conversation is unavailable.
@@ -846,6 +876,413 @@ then
   RequestBoundary.respond (report, requestId)
 ```
 
+### Returns.Balance
+
+Authored path: `Returns.Balance`.
+- Covered by [Returns](../design/compositions/Returns.md), line 5.
+- Covered by [Returns](../design/compositions/Returns.md), line 49.
+
+```reaction
+when RequestBoundary.request (path: "/returns/balance", requestId, session)
+then
+  Authenticating.authenticate (session)
+```
+
+### Returns.Balance#2
+
+Authored path: `Returns.Balance`.
+- Covered by [Returns](../design/compositions/Returns.md), line 5.
+- Covered by [Returns](../design/compositions/Returns.md), line 49.
+
+```reaction
+when Authenticating.authenticate (session, user), asked by Returns.Balance
+then
+  ContributionRewarding.balance (user)
+```
+
+### Returns.Balance#3
+
+Authored path: `Returns.Balance`.
+- Covered by [Returns](../design/compositions/Returns.md), line 5.
+- Covered by [Returns](../design/compositions/Returns.md), line 49.
+
+```reaction
+when ContributionRewarding.balance (user, points), asked by Returns.Balance#2
+where
+  earlier, RequestBoundary.request (path: "/returns/balance", requestId, session)
+then
+  RequestBoundary.respond (points, requestId)
+```
+
+### Returns.Begin
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/returns/begin", requestId, session)
+then
+  Authenticating.authenticate (session)
+```
+
+### Returns.Begin#2
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when Authenticating.authenticate (session, user), asked by Returns.Begin
+where
+  earlier, RequestBoundary.request (conversation, path: "/returns/begin", requestId, session)
+then
+  ConversationLinking.get (conversation)
+```
+
+### Returns.Begin#3
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Begin#2
+then
+  ItemReporting.returnInfo (report)
+```
+
+### Returns.Begin#4
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when ItemReporting.returnInfo (report, author: recipient), asked by Returns.Begin#3
+where
+  earlier, ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Begin#2
+then
+  Messaging.checkParticipants (conversation, first: recipient, second: contributor)
+```
+
+### Returns.Begin#5
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when Messaging.checkParticipants (conversation, first: recipient, second: contributor), asked by Returns.Begin#4
+where
+  earlier, Authenticating.authenticate (session, user), asked by Returns.Begin
+  earlier, ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Begin#2
+then
+  ContributionRewarding.register (contribution: report, contributor, recipient, user)
+```
+
+### Returns.Begin:completed#6
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when ContributionRewarding.register (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Begin#5
+where
+  rewarded is among [true]
+then
+  ItemReporting.close (author: recipient, report)
+```
+
+### Returns.Begin:completed#7
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when ItemReporting.close (author: recipient, report), asked by Returns.Begin:completed#6
+then
+  Matching.remove (record: report)
+```
+
+### Returns.Begin:completed#8
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when Matching.remove (record: report), asked by Returns.Begin:completed#7
+where
+  earlier, ContributionRewarding.register (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Begin#5
+  earlier, RequestBoundary.request (conversation, path: "/returns/begin", requestId, session)
+then
+  RequestBoundary.respond (requestId, status)
+```
+
+### Returns.Begin:pending#6
+
+Authored path: `Returns.Begin`.
+- Covered by [Returns](../design/compositions/Returns.md), line 3.
+- Covered by [Returns](../design/compositions/Returns.md), line 46.
+
+```reaction
+when ContributionRewarding.register (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Begin#5
+where
+  rewarded is among [false]
+  earlier, RequestBoundary.request (conversation, path: "/returns/begin", requestId, session)
+then
+  RequestBoundary.respond (requestId, status)
+```
+
+### Returns.Confirm
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/returns/confirm", requestId, session)
+then
+  Authenticating.authenticate (session)
+```
+
+### Returns.Confirm#2
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when Authenticating.authenticate (session, user), asked by Returns.Confirm
+where
+  earlier, RequestBoundary.request (conversation, path: "/returns/confirm", requestId, session)
+then
+  ConversationLinking.get (conversation)
+```
+
+### Returns.Confirm#3
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Confirm#2
+then
+  ItemReporting.returnInfo (report)
+```
+
+### Returns.Confirm#4
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when ItemReporting.returnInfo (report, author: recipient), asked by Returns.Confirm#3
+where
+  earlier, ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Confirm#2
+then
+  Messaging.checkParticipants (conversation, first: recipient, second: contributor)
+```
+
+### Returns.Confirm#5
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when Messaging.checkParticipants (conversation, first: recipient, second: contributor), asked by Returns.Confirm#4
+where
+  earlier, Authenticating.authenticate (session, user), asked by Returns.Confirm
+  earlier, ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Confirm#2
+then
+  ContributionRewarding.confirm (contribution: report, contributor, user)
+```
+
+### Returns.Confirm:completed#6
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when ContributionRewarding.confirm (contribution: report, contributor, user, recipient, rewarded, status), asked by Returns.Confirm#5
+where
+  rewarded is among [true]
+then
+  ItemReporting.close (author: recipient, report)
+```
+
+### Returns.Confirm:completed#7
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when ItemReporting.close (author: recipient, report), asked by Returns.Confirm:completed#6
+then
+  Matching.remove (record: report)
+```
+
+### Returns.Confirm:completed#8
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when Matching.remove (record: report), asked by Returns.Confirm:completed#7
+where
+  earlier, ContributionRewarding.confirm (contribution: report, contributor, user, recipient, rewarded, status), asked by Returns.Confirm#5
+  earlier, RequestBoundary.request (conversation, path: "/returns/confirm", requestId, session)
+then
+  RequestBoundary.respond (requestId, status)
+```
+
+### Returns.Confirm:pending#6
+
+Authored path: `Returns.Confirm`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 47.
+
+```reaction
+when ContributionRewarding.confirm (contribution: report, contributor, user, recipient, rewarded, status), asked by Returns.Confirm#5
+where
+  rewarded is among [false]
+  earlier, RequestBoundary.request (conversation, path: "/returns/confirm", requestId, session)
+then
+  RequestBoundary.respond (requestId, status)
+```
+
+### Returns.Status
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when RequestBoundary.request (conversation, path: "/returns/status", requestId, session)
+then
+  Authenticating.authenticate (session)
+```
+
+### Returns.Status#2
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when Authenticating.authenticate (session, user), asked by Returns.Status
+where
+  earlier, RequestBoundary.request (conversation, path: "/returns/status", requestId, session)
+then
+  ConversationLinking.get (conversation)
+```
+
+### Returns.Status#3
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Status#2
+then
+  ItemReporting.returnInfo (report)
+```
+
+### Returns.Status#4
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when ItemReporting.returnInfo (report, author: recipient), asked by Returns.Status#3
+where
+  earlier, ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Status#2
+then
+  Messaging.checkParticipants (conversation, first: recipient, second: contributor)
+```
+
+### Returns.Status#5
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when Messaging.checkParticipants (conversation, first: recipient, second: contributor), asked by Returns.Status#4
+where
+  earlier, Authenticating.authenticate (session, user), asked by Returns.Status
+  earlier, ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Status#2
+then
+  ContributionRewarding.status (contribution: report, contributor, recipient, user)
+```
+
+### Returns.Status:completed#6
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when ContributionRewarding.status (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Status#5
+where
+  rewarded is among [true]
+then
+  ItemReporting.close (author: recipient, report)
+```
+
+### Returns.Status:completed#7
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when ItemReporting.close (author: recipient, report), asked by Returns.Status:completed#6
+then
+  Matching.remove (record: report)
+```
+
+### Returns.Status:completed#8
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when Matching.remove (record: report), asked by Returns.Status:completed#7
+where
+  earlier, ContributionRewarding.status (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Status#5
+  earlier, RequestBoundary.request (conversation, path: "/returns/status", requestId, session)
+then
+  RequestBoundary.respond (requestId, status)
+```
+
+### Returns.Status:pending#6
+
+Authored path: `Returns.Status`.
+- Covered by [Returns](../design/compositions/Returns.md), line 4.
+- Covered by [Returns](../design/compositions/Returns.md), line 48.
+
+```reaction
+when ContributionRewarding.status (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Status#5
+where
+  rewarded is among [false]
+  earlier, RequestBoundary.request (conversation, path: "/returns/status", requestId, session)
+then
+  RequestBoundary.respond (requestId, status)
+```
+
 ## Endpoint input contracts
 
 Before recording an action ask, the boundary rejects a body that is not an
@@ -868,3 +1305,7 @@ not listed here have no explicit input contract.
 - `/reports/matches` — requires `session`, `report`
 - `/reports/search` — requires `session`, `attributes`
 - `/reports/update` — requires `session`, `report`, `title`, `attributes`
+- `/returns/balance` — requires `session`
+- `/returns/begin` — requires `session`, `conversation`
+- `/returns/confirm` — requires `session`, `conversation`
+- `/returns/status` — requires `session`, `conversation`

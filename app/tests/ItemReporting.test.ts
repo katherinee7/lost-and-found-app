@@ -210,3 +210,14 @@ test("invalid edits, strangers, and closed reports leave report data unchanged",
   await expect(reporting.update({ author: "owner", report, title: "Edited", attributes })).rejects.toBeInstanceOf(ReportUnavailable);
   expect(await reporting._own({ author: "owner" })).toEqual(closed);
 });
+
+test("returnInfo supports existing missing reports and manual closure but rejects found records", async () => {
+  const { report } = await reporting.create({ author: "owner", kind: "missing", title: "Missing", attributes });
+  await db.collection("itemreporting.reports").updateOne({ _id: report }, { $unset: { kind: "" } });
+  expect(await reporting.returnInfo({ report })).toEqual({ author: "owner", open: true });
+  await reporting.close({ author: "owner", report });
+  expect(await reporting.returnInfo({ report })).toEqual({ author: "owner", open: false });
+  const { report: found } = await reporting.create({ author: "owner", kind: "found", title: "Found", attributes });
+  await expect(reporting.returnInfo({ report: found })).rejects.toBeInstanceOf(ReportUnavailable);
+  await expect(reporting.returnInfo({ report: "unknown" })).rejects.toBeInstanceOf(ReportUnavailable);
+});

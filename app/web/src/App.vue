@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref } from "vue";
 import MyReports from "./components/MyReports.vue";
 import FindOwner from "./components/FindOwner.vue";
+import PointsSummary from "./components/PointsSummary.vue";
 import Messages from "./components/Messages.vue";
 import { client } from "./client";
 
@@ -15,6 +16,8 @@ const message = ref("");
 const busy = ref(false);
 const messageError = ref(false);
 const content = ref<HTMLElement | null>(null);
+
+const pointsVersion = ref(0);
 
 const pages = ["My Reports", "Find an Owner", "Messages"];
 
@@ -162,6 +165,7 @@ const selectedConversation = ref("");
 
 async function navigate(destination: string) {
   page.value = destination;
+  pointsVersion.value++;
   await nextTick();
   content.value?.querySelector<HTMLElement>("h2")?.focus();
 }
@@ -177,8 +181,9 @@ function showConversation(conversation: string) {
     <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header">
       <div class="brand"><span class="brand-mark" aria-hidden="true">↶</span> Backtrack</div>
-      <div class="header-actions">
-        <span class="hint">Campus lost &amp; found</span>
+      <div class="header-actions" :class="{ 'logged-in': !!userId }">
+        <PointsSummary v-if="userId" :key="session" :session="session" :refresh-key="pointsVersion" />
+        <span v-else class="hint">Campus lost &amp; found</span>
         <button v-if="userId" :disabled="busy" @click="logout">Log out</button>
       </div>
     </header>
@@ -227,7 +232,7 @@ function showConversation(conversation: string) {
       <template v-else>
         <MyReports v-if="page === 'My Reports'" :session="session" @contact="showConversation" />
         <FindOwner v-else-if="page === 'Find an Owner'" :session="session" @contact="showConversation" />
-        <Messages v-else-if="page === 'Messages'" :session="session" :user-id="userId" :initial-conversation="selectedConversation" />
+        <Messages v-else-if="page === 'Messages'" :session="session" :user-id="userId" :initial-conversation="selectedConversation" @return-updated="pointsVersion++" />
       </template>
       <p v-if="message" class="status" :class="{ error: messageError }" :role="messageError ? 'alert' : 'status'">{{ message }}</p>
     </main>

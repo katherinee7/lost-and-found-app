@@ -18,4 +18,8 @@ instantiate ConversationLinking with
   User is Authenticating.User
   Context is ItemReporting.Report
   Conversation is Messaging.Conversation
+
+instantiate ContributionRewarding with
+  User is Authenticating.User
+  Contribution is ItemReporting.Report
 ```

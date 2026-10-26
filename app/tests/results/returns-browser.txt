@@ -1,0 +1,4 @@
+PASS: return confirmation and points at 1280px; zero automated WCAG A/AA violations.
+PASS: return confirmation and points at 360px; zero automated WCAG A/AA violations.
+PASS: return confirmation and points at 320px; zero automated WCAG A/AA violations.
+PASS: owner starts, first confirmation gives zero points, finder confirms and receives exactly one point, missing report closes, balance/status persist across reload, and messaging continues after closure.

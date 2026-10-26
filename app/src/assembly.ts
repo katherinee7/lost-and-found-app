@@ -1,3 +1,5 @@
+import { ContributionRewardingConcept } from "./concepts/ContributionRewarding.ts";
+import { composition as returnsComposition } from "./compositions/Returns.ts";
 import { ConversationLinkingConcept } from "./concepts/ConversationLinking.ts";
 import type { Db } from "mongodb";
 import { assemble } from "@mit-sdg/sync-engine/assembly";
@@ -20,11 +22,13 @@ export function assembleApplication(database: Db = db) {
       Matching: new MatchingConcept(database),
       Messaging: new MessagingConcept(database),
       ConversationLinking: new ConversationLinkingConcept(database),
+      ContributionRewarding: new ContributionRewardingConcept(database),
     },
     composition: {
       Accounts: accountsComposition,
       Reports: reportsComposition,
       Messages: messagesComposition,
+      Returns: returnsComposition,
     },
   });
 }
