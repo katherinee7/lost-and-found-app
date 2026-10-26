@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import { client } from "../client";
+import type { ReportAttributes } from "../report-form";
 import ReportFields from "./ReportFields.vue";
 
 const props = defineProps<{ session: string }>();
@@ -25,6 +26,7 @@ const fields = reactive({
 });
 
 const matches = ref<Match[]>([]);
+const searchAttributes = ref<ReportAttributes | null>(null);
 const busy = ref(false);
 const searched = ref(false);
 const message = ref("");
@@ -68,13 +70,15 @@ async function search() {
   messageError.value = false;
   matches.value = [];
   searched.value = false;
+  searchAttributes.value = null;
   searching.value = true;
   busy.value = true;
 
   try {
+    const attributes = currentAttributes();
     const result = await client.reports.search({
       session: props.session,
-      attributes: currentAttributes(),
+      attributes,
     });
 
     if ("error" in result) {
@@ -87,6 +91,7 @@ async function search() {
       );
     }
 
+    searchAttributes.value = attributes;
     matches.value = result.results.matches;
     searched.value = true;
   } catch (error) {
@@ -134,6 +139,7 @@ const emit = defineEmits<{
 }>();
 
 async function contactOwner(report: string) {
+  if (!searchAttributes.value) return;
   busy.value = true;
   message.value = "";
   messageError.value = false;
@@ -142,12 +148,13 @@ async function contactOwner(report: string) {
     const result = await client.messages.start({
       session: props.session,
       report,
+      attributes: searchAttributes.value,
     });
 
     if ("error" in result) {
       throw new Error(
         result.error === "NOT_FOUND"
-          ? "That report is unavailable or belongs to you."
+          ? "That report is no longer a compatible match. Search again to update results."
           : `Could not start conversation: ${result.error}`,
       );
     }

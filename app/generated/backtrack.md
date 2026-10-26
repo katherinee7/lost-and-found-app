@@ -89,6 +89,9 @@ Defined in [Matching](../design/concepts/Matching.md), line 1.
 
 - `register(record: Record, attributes: Attributes) : returns (record: Record)`
   - Refuses `INVALID_MATCH_ATTRIBUTES`: Invalid matching characteristics.
+- `requireMatch(record: Record, attributes: Attributes) : returns (record: Record)`
+  - Refuses `INVALID_MATCH_ATTRIBUTES`: Invalid matching characteristics.
+  - Refuses `NO_COMPATIBLE_RECORD`: That record is not a current compatible match.
 - `remove(record: Record) : returns (record: Record)`
 
 #### Queries
@@ -152,7 +155,7 @@ Former "limited summaries of compatible open reports" — inputs (attributes, us
 ### the authenticated user's conversations
 
 Authored path: `Messages.ConversationList`.
-- Covered by [Messages](../design/compositions/Messages.md), line 28.
+- Covered by [Messages](../design/compositions/Messages.md), line 46.
 
 ```former
 Former "the authenticated user's conversations" — inputs (user); bindings (conversation, other, report, title, username); promises exactly one record — forms:
@@ -315,7 +318,7 @@ then
 
 Authored path: `Messages.List`.
 - Covered by [Messages](../design/compositions/Messages.md), line 7.
-- Covered by [Messages](../design/compositions/Messages.md), line 46.
+- Covered by [Messages](../design/compositions/Messages.md), line 65.
 
 ```reaction
 when RequestBoundary.request (path: "/messages/list", requestId, session)
@@ -327,7 +330,7 @@ then
 
 Authored path: `Messages.List`.
 - Covered by [Messages](../design/compositions/Messages.md), line 7.
-- Covered by [Messages](../design/compositions/Messages.md), line 46.
+- Covered by [Messages](../design/compositions/Messages.md), line 65.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.List
@@ -341,7 +344,7 @@ then
 
 Authored path: `Messages.Read`.
 - Covered by [Messages](../design/compositions/Messages.md), line 8.
-- Covered by [Messages](../design/compositions/Messages.md), line 47.
+- Covered by [Messages](../design/compositions/Messages.md), line 66.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/messages/read", requestId, session)
@@ -353,7 +356,7 @@ then
 
 Authored path: `Messages.Read`.
 - Covered by [Messages](../design/compositions/Messages.md), line 8.
-- Covered by [Messages](../design/compositions/Messages.md), line 47.
+- Covered by [Messages](../design/compositions/Messages.md), line 66.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.Read
@@ -367,7 +370,7 @@ then
 
 Authored path: `Messages.Read`.
 - Covered by [Messages](../design/compositions/Messages.md), line 8.
-- Covered by [Messages](../design/compositions/Messages.md), line 47.
+- Covered by [Messages](../design/compositions/Messages.md), line 66.
 
 ```reaction
 when Messaging.read (conversation, user, messages), asked by Messages.Read#2
@@ -381,7 +384,7 @@ then
 
 Authored path: `Messages.Send`.
 - Covered by [Messages](../design/compositions/Messages.md), line 9.
-- Covered by [Messages](../design/compositions/Messages.md), line 48.
+- Covered by [Messages](../design/compositions/Messages.md), line 67.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/messages/send", requestId, session, text)
@@ -393,7 +396,7 @@ then
 
 Authored path: `Messages.Send`.
 - Covered by [Messages](../design/compositions/Messages.md), line 9.
-- Covered by [Messages](../design/compositions/Messages.md), line 48.
+- Covered by [Messages](../design/compositions/Messages.md), line 67.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.Send
@@ -407,7 +410,7 @@ then
 
 Authored path: `Messages.Send`.
 - Covered by [Messages](../design/compositions/Messages.md), line 9.
-- Covered by [Messages](../design/compositions/Messages.md), line 48.
+- Covered by [Messages](../design/compositions/Messages.md), line 67.
 
 ```reaction
 when Messaging.send (conversation, sender: user, text, message), asked by Messages.Send#2
@@ -421,10 +424,10 @@ then
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 45.
+- Covered by [Messages](../design/compositions/Messages.md), line 63.
 
 ```reaction
-when RequestBoundary.request (path: "/messages/start", report, requestId, session)
+when RequestBoundary.request (attributes, path: "/messages/start", report, requestId, session)
 then
   Authenticating.authenticate (session)
 ```
@@ -433,12 +436,12 @@ then
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 45.
+- Covered by [Messages](../design/compositions/Messages.md), line 63.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Messages.Start
 where
-  earlier, RequestBoundary.request (path: "/messages/start", report, requestId, session)
+  earlier, RequestBoundary.request (attributes, path: "/messages/start", report, requestId, session)
 then
   ItemReporting.contactTarget (report, requester: user)
 ```
@@ -447,38 +450,150 @@ then
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 45.
+- Covered by [Messages](../design/compositions/Messages.md), line 63.
 
 ```reaction
 when ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.Start#2
+where
+  earlier, RequestBoundary.request (attributes, path: "/messages/start", report, requestId, session)
 then
-  ConversationLinking.resolve (context: report, initiator: user)
+  Matching.requireMatch (attributes, record: report)
 ```
 
 ### Messages.Start#4
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 45.
+- Covered by [Messages](../design/compositions/Messages.md), line 63.
 
 ```reaction
-when ConversationLinking.resolve (context: report, initiator: user, conversation), asked by Messages.Start#3
+when Matching.requireMatch (attributes, record: report), asked by Messages.Start#3
 where
-  earlier, ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.Start#2
+  earlier, Authenticating.authenticate (session, user), asked by Messages.Start
 then
-  Messaging.ensure (conversation, first: user, second: owner)
+  ConversationLinking.resolve (context: report, initiator: user)
 ```
 
 ### Messages.Start#5
 
 Authored path: `Messages.Start`.
 - Covered by [Messages](../design/compositions/Messages.md), line 3.
-- Covered by [Messages](../design/compositions/Messages.md), line 45.
+- Covered by [Messages](../design/compositions/Messages.md), line 63.
 
 ```reaction
-when Messaging.ensure (conversation, first: user, second: owner), asked by Messages.Start#4
+when ConversationLinking.resolve (context: report, initiator: user, conversation), asked by Messages.Start#4
 where
-  earlier, RequestBoundary.request (path: "/messages/start", report, requestId, session)
+  earlier, ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.Start#2
+then
+  Messaging.ensure (conversation, first: user, second: owner)
+```
+
+### Messages.Start#6
+
+Authored path: `Messages.Start`.
+- Covered by [Messages](../design/compositions/Messages.md), line 3.
+- Covered by [Messages](../design/compositions/Messages.md), line 63.
+
+```reaction
+when Messaging.ensure (conversation, first: user, second: owner), asked by Messages.Start#5
+where
+  earlier, RequestBoundary.request (attributes, path: "/messages/start", report, requestId, session)
+then
+  RequestBoundary.respond (conversation, requestId)
+```
+
+### Messages.StartSaved
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when RequestBoundary.request (foundReport, path: "/messages/start-saved", report, requestId, session)
+then
+  Authenticating.authenticate (session)
+```
+
+### Messages.StartSaved#2
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when Authenticating.authenticate (session, user), asked by Messages.StartSaved
+where
+  earlier, RequestBoundary.request (foundReport, path: "/messages/start-saved", report, requestId, session)
+then
+  ItemReporting.readFound (author: user, report: foundReport)
+```
+
+### Messages.StartSaved#3
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when ItemReporting.readFound (author: user, report: foundReport, attributes), asked by Messages.StartSaved#2
+where
+  earlier, RequestBoundary.request (foundReport, path: "/messages/start-saved", report, requestId, session)
+then
+  ItemReporting.contactTarget (report, requester: user)
+```
+
+### Messages.StartSaved#4
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.StartSaved#3
+where
+  earlier, ItemReporting.readFound (author: user, report: foundReport, attributes), asked by Messages.StartSaved#2
+then
+  Matching.requireMatch (attributes, record: report)
+```
+
+### Messages.StartSaved#5
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when Matching.requireMatch (attributes, record: report), asked by Messages.StartSaved#4
+where
+  earlier, Authenticating.authenticate (session, user), asked by Messages.StartSaved
+then
+  ConversationLinking.resolve (context: report, initiator: user)
+```
+
+### Messages.StartSaved#6
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when ConversationLinking.resolve (context: report, initiator: user, conversation), asked by Messages.StartSaved#5
+where
+  earlier, ItemReporting.contactTarget (report, requester: user, owner), asked by Messages.StartSaved#3
+then
+  Messaging.ensure (conversation, first: user, second: owner)
+```
+
+### Messages.StartSaved#7
+
+Authored path: `Messages.StartSaved`.
+- Covered by [Messages](../design/compositions/Messages.md), line 22.
+- Covered by [Messages](../design/compositions/Messages.md), line 64.
+
+```reaction
+when Messaging.ensure (conversation, first: user, second: owner), asked by Messages.StartSaved#6
+where
+  earlier, RequestBoundary.request (foundReport, path: "/messages/start-saved", report, requestId, session)
 then
   RequestBoundary.respond (conversation, requestId)
 ```
@@ -487,7 +602,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 6.
-- Covered by [Reports](../design/compositions/Reports.md), line 66.
+- Covered by [Reports](../design/compositions/Reports.md), line 67.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/close", report, requestId, session)
@@ -499,7 +614,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 6.
-- Covered by [Reports](../design/compositions/Reports.md), line 66.
+- Covered by [Reports](../design/compositions/Reports.md), line 67.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Close
@@ -513,7 +628,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 6.
-- Covered by [Reports](../design/compositions/Reports.md), line 66.
+- Covered by [Reports](../design/compositions/Reports.md), line 67.
 
 ```reaction
 when ItemReporting.close (author, report), asked by Reports.Close#2
@@ -525,7 +640,7 @@ then
 
 Authored path: `Reports.Close`.
 - Covered by [Reports](../design/compositions/Reports.md), line 6.
-- Covered by [Reports](../design/compositions/Reports.md), line 66.
+- Covered by [Reports](../design/compositions/Reports.md), line 67.
 
 ```reaction
 when Matching.remove (record: report), asked by Reports.Close#3
@@ -539,7 +654,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 63.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
 
 ```reaction
 when RequestBoundary.request (attributes, kind, path: "/reports/create", requestId, session, title)
@@ -551,7 +666,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 63.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Create
@@ -565,7 +680,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 63.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
 
 ```reaction
 when ItemReporting.create (attributes, author, kind, title, report), asked by Reports.Create#2
@@ -577,7 +692,7 @@ then
 
 Authored path: `Reports.Create`.
 - Covered by [Reports](../design/compositions/Reports.md), line 3.
-- Covered by [Reports](../design/compositions/Reports.md), line 63.
+- Covered by [Reports](../design/compositions/Reports.md), line 64.
 
 ```reaction
 when Matching.register (attributes, record: report), asked by Reports.Create#3
@@ -591,7 +706,7 @@ then
 
 Authored path: `Reports.List`.
 - Covered by [Reports](../design/compositions/Reports.md), line 4.
-- Covered by [Reports](../design/compositions/Reports.md), line 65.
+- Covered by [Reports](../design/compositions/Reports.md), line 66.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/list", requestId, session)
@@ -603,7 +718,7 @@ then
 
 Authored path: `Reports.List`.
 - Covered by [Reports](../design/compositions/Reports.md), line 4.
-- Covered by [Reports](../design/compositions/Reports.md), line 65.
+- Covered by [Reports](../design/compositions/Reports.md), line 66.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.List
@@ -617,7 +732,7 @@ then
 
 Authored path: `Reports.Matches`.
 - Covered by [Reports](../design/compositions/Reports.md), line 29.
-- Covered by [Reports](../design/compositions/Reports.md), line 68.
+- Covered by [Reports](../design/compositions/Reports.md), line 69.
 
 ```reaction
 when RequestBoundary.request (path: "/reports/matches", report, requestId, session)
@@ -629,7 +744,7 @@ then
 
 Authored path: `Reports.Matches`.
 - Covered by [Reports](../design/compositions/Reports.md), line 29.
-- Covered by [Reports](../design/compositions/Reports.md), line 68.
+- Covered by [Reports](../design/compositions/Reports.md), line 69.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Reports.Matches
@@ -643,7 +758,7 @@ then
 
 Authored path: `Reports.Matches`.
 - Covered by [Reports](../design/compositions/Reports.md), line 29.
-- Covered by [Reports](../design/compositions/Reports.md), line 68.
+- Covered by [Reports](../design/compositions/Reports.md), line 69.
 
 ```reaction
 when ItemReporting.readFound (author: user, report, attributes), asked by Reports.Matches#2
@@ -657,7 +772,7 @@ then
 
 Authored path: `Reports.Search`.
 - Covered by [Reports](../design/compositions/Reports.md), line 15.
-- Covered by [Reports](../design/compositions/Reports.md), line 67.
+- Covered by [Reports](../design/compositions/Reports.md), line 68.
 
 ```reaction
 when RequestBoundary.request (attributes, path: "/reports/search", requestId, session)
@@ -669,7 +784,7 @@ then
 
 Authored path: `Reports.Search`.
 - Covered by [Reports](../design/compositions/Reports.md), line 15.
-- Covered by [Reports](../design/compositions/Reports.md), line 67.
+- Covered by [Reports](../design/compositions/Reports.md), line 68.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Reports.Search
@@ -683,7 +798,7 @@ then
 
 Authored path: `Reports.Update`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 64.
+- Covered by [Reports](../design/compositions/Reports.md), line 65.
 
 ```reaction
 when RequestBoundary.request (attributes, path: "/reports/update", report, requestId, session, title)
@@ -695,7 +810,7 @@ then
 
 Authored path: `Reports.Update`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 64.
+- Covered by [Reports](../design/compositions/Reports.md), line 65.
 
 ```reaction
 when Authenticating.authenticate (session, user: author), asked by Reports.Update
@@ -709,7 +824,7 @@ then
 
 Authored path: `Reports.Update`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 64.
+- Covered by [Reports](../design/compositions/Reports.md), line 65.
 
 ```reaction
 when ItemReporting.update (attributes, author, report, title), asked by Reports.Update#2
@@ -721,7 +836,7 @@ then
 
 Authored path: `Reports.Update`.
 - Covered by [Reports](../design/compositions/Reports.md), line 5.
-- Covered by [Reports](../design/compositions/Reports.md), line 64.
+- Covered by [Reports](../design/compositions/Reports.md), line 65.
 
 ```reaction
 when Matching.register (attributes, record: report), asked by Reports.Update#3
@@ -745,7 +860,8 @@ not listed here have no explicit input contract.
 - `/messages/list` — requires `session`
 - `/messages/read` — requires `session`, `conversation`
 - `/messages/send` — requires `session`, `conversation`, `text`
-- `/messages/start` — requires `session`, `report`
+- `/messages/start` — requires `session`, `report`, `attributes`
+- `/messages/start-saved` — requires `session`, `report`, `foundReport`
 - `/reports/close` — requires `session`, `report`
 - `/reports/create` — requires `session`, `title`, `kind`, `attributes`
 - `/reports/list` — requires `session`

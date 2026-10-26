@@ -13,6 +13,7 @@ import matchingSpec from "../design/concepts/Matching.md" with { type: "text" };
 import {
   MatchingConcept,
   InvalidMatchAttributes,
+  NoCompatibleRecord,
 } from "./concepts/Matching.ts";
 
 import {
@@ -66,6 +67,7 @@ const matching = registerConcept({
   spec: matchingSpec,
   refusals: {
     INVALID_MATCH_ATTRIBUTES: InvalidMatchAttributes,
+    NO_COMPATIBLE_RECORD: NoCompatibleRecord,
   },
 });
 

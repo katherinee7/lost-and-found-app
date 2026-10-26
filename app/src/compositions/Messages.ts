@@ -10,9 +10,10 @@ import {
   former,
   whether,
 } from "@mit-sdg/sync-engine/language";
+import { validAttributes } from "../concepts/ItemReporting.ts";
 import { concepts } from "../concepts.ts";
 
-const { Authenticating, ItemReporting, Messaging, ConversationLinking } = concepts;
+const { Authenticating, ItemReporting, Messaging, ConversationLinking, Matching } = concepts;
 
 function object(
   value: unknown,
@@ -41,7 +42,8 @@ function input(
       : { ok: false, detail: "Invalid messaging request." };
 }
 
-const startInput = input((value) => id(value.report));
+const startInput = input((value) => id(value.report) && validAttributes(value.attributes));
+const savedStartInput = input((value) => id(value.report) && id(value.foundReport));
 const listInput = input(() => true);
 
 const readInput = input(
@@ -116,8 +118,8 @@ const ConversationList = former(
 
 const Start = endpoint(
   "/messages/start",
-  ({ session, report, user, owner, conversation }) =>
-    receive({ session, report })
+  ({ session, report, attributes, user, owner, conversation }) =>
+    receive({ session, report, attributes })
       .then(
         Authenticating.authenticate({ session })
           .responds({ user }),
@@ -128,6 +130,7 @@ const Start = endpoint(
           report,
         }).responds({ owner }),
       )
+      .then(Matching.requireMatch({ record: report, attributes }))
       .then(
         ConversationLinking.resolve({ initiator: user, context: report }).responds({ conversation }),
       )
@@ -136,9 +139,41 @@ const Start = endpoint(
       )
       .then(respond({ conversation })),
   {
-    input: { required: ["session", "report"] },
+    input: { required: ["session", "report", "attributes"] },
     validators: {
       input: startInput,
+      output: conversationOutput,
+    },
+  },
+);
+
+const StartSaved = endpoint(
+  "/messages/start-saved",
+  ({ session, report, foundReport, attributes, user, owner, conversation }) =>
+    receive({ session, report, foundReport })
+      .then(
+        Authenticating.authenticate({ session })
+          .responds({ user }),
+      )
+      .then(ItemReporting.readFound({ author: user, report: foundReport }).responds({ attributes }))
+      .then(
+        ItemReporting.contactTarget({
+          requester: user,
+          report,
+        }).responds({ owner }),
+      )
+      .then(Matching.requireMatch({ record: report, attributes }))
+      .then(
+        ConversationLinking.resolve({ initiator: user, context: report }).responds({ conversation }),
+      )
+      .then(
+        Messaging.ensure({ conversation, first: user, second: owner }),
+      )
+      .then(respond({ conversation })),
+  {
+    input: { required: ["session", "report", "foundReport"] },
+    validators: {
+      input: savedStartInput,
       output: conversationOutput,
     },
   },
@@ -216,6 +251,7 @@ const Send = endpoint(
 export const composition = {
   ConversationList,
   Start,
+  StartSaved,
   List,
   Read,
   Send,

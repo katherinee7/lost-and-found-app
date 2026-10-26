@@ -43,6 +43,18 @@ register (record: Record, attributes: Attributes) : returns (record: Record)
     add or replace the entry for record with attributes
     returns record
 
+requireMatch (record: Record, attributes: Attributes) : returns (record: Record)
+  where attributes are invalid
+  then
+    refuses INVALID_MATCH_ATTRIBUTES "Invalid matching characteristics."
+  where record is unregistered or incompatible with attributes
+  then
+    refuses NO_COMPATIBLE_RECORD "That record is not a current compatible match."
+  where record is registered and compatible with valid attributes
+  then
+    preserve all entries
+    returns record
+
 remove (record: Record) : returns (record: Record)
   where true
   then

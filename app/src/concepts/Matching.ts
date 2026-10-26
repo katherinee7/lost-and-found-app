@@ -1,6 +1,7 @@
 import type { Collection, Db } from "mongodb";
 
 export class InvalidMatchAttributes extends Error {}
+export class NoCompatibleRecord extends Error {}
 
 interface Attributes {
   category: string;
@@ -115,6 +116,15 @@ export class MatchingConcept {
 
   async remove({ record }: { record: string }) {
     await this.entries.deleteOne({ _id: record });
+    return { record };
+  }
+
+  async requireMatch({ record, attributes }: { record: string; attributes: Attributes }) {
+    if (!valid(attributes)) throw new InvalidMatchAttributes("Invalid matching characteristics.");
+    const entry = await this.entries.findOne({ _id: record });
+    if (!entry || !compatible(entry.attributes, attributes)) {
+      throw new NoCompatibleRecord("That record is not a current compatible match.");
+    }
     return { record };
   }
 

@@ -54,7 +54,7 @@ test("saved records are private, session-owned, persistent, and excluded from ow
   expect(results.results.matches[0]).not.toHaveProperty("author");
   expect(results.results.matches[0]).not.toHaveProperty("brand");
   expect(results.results.matches[0]).not.toHaveProperty("colors");
-  expect((await post("/messages/start", { session: owner.session, report: found })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { attributes, session: owner.session, report: found })).error).toBe("NOT_FOUND");
   expect((await post("/reports/close", { session: owner.session, author: finder.user, report: found })).error).toBe("NOT_FOUND");
   expect((await post("/reports/list", { session: finder.session })).book.reports).toEqual([expected]);
 
@@ -75,7 +75,7 @@ test("P2 documents remain missing, searchable, contactable and closable", async 
   await db.collection("itemreporting.reports").updateOne({ _id: report }, { $unset: { kind: "" } });
   expect((await post("/reports/list", { session: owner.session })).book.reports[0].kind).toBe("missing");
   expect((await post("/reports/search", { session: finder.session, attributes })).results.matches[0].report).toBe(report);
-  expect(typeof (await post("/messages/start", { session: finder.session, report })).conversation).toBe("string");
+  expect(typeof (await post("/messages/start", { attributes, session: finder.session, report })).conversation).toBe("string");
   await post("/reports/close", { session: owner.session, report });
   expect((await post("/reports/search", { session: finder.session, attributes })).results.matches).toEqual([]);
 });
@@ -131,7 +131,7 @@ test("later matches are recomputed on each request and exclude closed, incompati
   expect((await loadMatches()).results.matches.map((match: { report: string }) => match.report)).toEqual([later]);
   // Finder search shares the same exclusion and summary rules.
   expect((await post("/reports/search", { session: finder.session, attributes })).results.matches.map((match: { report: string }) => match.report)).toEqual([later]);
-  expect(typeof (await post("/messages/start", { session: finder.session, report: later })).conversation).toBe("string");
+  expect(typeof (await post("/messages/start", { attributes, session: finder.session, report: later })).conversation).toBe("string");
   await post("/reports/close", { session: owner.session, report: later });
   expect((await loadMatches()).results.matches).toEqual([]);
 });

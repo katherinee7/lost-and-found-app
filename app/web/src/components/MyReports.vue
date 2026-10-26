@@ -210,15 +210,15 @@ async function refresh() {
   }
 }
 
-async function contactOwner(report: string) {
+async function contactOwner(report: string, foundReport: string) {
   busy.value = true;
   message.value = "";
   messageError.value = false;
   try {
-    const result = await client.messages.start({ session: props.session, report });
+    const result = await client.messages["start-saved"]({ session: props.session, report, foundReport });
     if ("error" in result) {
       throw new Error(result.error === "NOT_FOUND"
-        ? "That report is no longer available. Refresh to update matches."
+        ? "That report is no longer a compatible match. Refresh to update matches."
         : `Could not start conversation: ${result.error}`);
     }
     emit("contact", result.conversation);
@@ -308,7 +308,7 @@ onMounted(async () => {
                   <p v-if="matchesByReport[report.report]!.length === 0" class="hint">No current matches. Refresh later to check again.</p>
                   <article v-for="match in matchesByReport[report.report]" :key="match.report" class="match-card">
                     <h5>{{ match.title }}</h5><p>{{ match.category }}</p><p>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</p><p>{{ match.locations.join(", ") || "Location unspecified" }}</p>
-                    <div class="actions"><button :disabled="busy || !!editing" :aria-label="`Contact owner about ${match.title}`" @click="contactOwner(match.report)">Contact owner</button></div>
+                    <div class="actions"><button :disabled="busy || !!editing" :aria-label="`Contact owner about ${match.title}`" @click="contactOwner(match.report, report.report)">Contact owner</button></div>
                   </article>
                 </div>
               </template>

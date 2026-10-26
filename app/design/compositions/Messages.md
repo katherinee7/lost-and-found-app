@@ -11,6 +11,24 @@ and [send a message](reaction:Messages.Send).
 Every request authenticates its session. Read and send actions enforce
 conversation membership. Sender identity comes from the session.
 
+Finder-search Start requires the search attributes and checks
+Matching.requireMatch against the target's current registered attributes, in
+addition to ItemReporting.contactTarget. The frontend retains the attributes
+of the successful search that produced the displayed results, even if the form
+is subsequently edited. Missing or malformed attributes are rejected. This
+rechecks compatibility rather than storing search history or proving a prior
+search request occurred.
+
+[Contact from a saved record](reaction:Messages.StartSaved) requires the saved
+found ID and target missing ID. It authenticates, calls ItemReporting.readFound
+to enforce ownership and open found status, checks the target, and calls
+Matching.requireMatch using the stored found attributes. Client-supplied
+attributes cannot replace the saved record's attributes. Both contact endpoints
+complete these checks before reserving any link or ensuring a conversation.
+A stale, incompatible, self-authored, or closed target is rejected without
+creating a link or conversation. Existing participants can continue reading
+and sending after reports change or close; read/send do not recheck matching.
+
 Start authenticates and checks ItemReporting.contactTarget before reserving
 an identity with ConversationLinking.resolve, using the signed-in finder as
 initiator and the missing report as context. Messaging.ensure creates or
@@ -43,6 +61,7 @@ Messages list. The existing Messages-screen refresh/polling behavior is retained
 
 ```endpoints
 Messages.Start at /messages/start
+Messages.StartSaved at /messages/start-saved
 Messages.List at /messages/list
 Messages.Read at /messages/read
 Messages.Send at /messages/send

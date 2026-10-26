@@ -38,7 +38,8 @@ remain eligible as missing reports.
 On page load and manual refresh, the frontend requests matches for each open
 saved found record and displays the length of each returned match list as its
 current potential-match count. View matches reveals those same summaries and
-Contact owner uses Messages.Start. Closed found records have no match action.
+Contact owner uses Messages.StartSaved with the saved found record ID and
+target missing report ID, rechecking ownership and compatibility before contact. Closed found records have no match action.
 Failed requests show an unavailable state rather than a count of zero. Counts
 are not stored. There is no polling, unread tracking, or notification state.
 

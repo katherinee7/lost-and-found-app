@@ -3,69 +3,72 @@ Command (from app/): TZ=America/New_York bun test --randomize --seed=61040
 bun test v1.4.2 (744846f84)
 
 tests/ItemReporting.test.ts:
-(pass) the author can close their report [19.96ms]
-(pass) invalid edits, strangers, and closed reports leave report data unchanged [17.61ms]
-(pass) creates a report that persists across instances [7.70ms]
-(pass) invalid kinds and found record fields leave no records [1.46ms]
-(pass) another user cannot list or close the report [11.23ms]
-(pass) rejects invalid report fields [0.78ms]
-(pass) authors can update open missing and found reports without changing identity or kind [11.67ms]
-(pass) legacy documents without kind behave as missing without a migration [11.58ms]
-(pass) readFound returns attributes only to the author of an open found record [11.30ms]
-(pass) found records persist privately and only their author can close them [10.66ms]
+(pass) the author can close their report [15.39ms]
+(pass) invalid edits, strangers, and closed reports leave report data unchanged [18.30ms]
+(pass) creates a report that persists across instances [7.66ms]
+(pass) invalid kinds and found record fields leave no records [1.62ms]
+(pass) another user cannot list or close the report [9.29ms]
+(pass) rejects invalid report fields [0.77ms]
+(pass) authors can update open missing and found reports without changing identity or kind [12.05ms]
+(pass) legacy documents without kind behave as missing without a migration [10.35ms]
+(pass) readFound returns attributes only to the author of an open found record [10.34ms]
+(pass) found records persist privately and only their author can close them [9.34ms]
 
 tests/Matching.test.ts:
-(pass) removing a record excludes it from search [6.50ms]
-(pass) unspecified optional characteristics do not exclude matches [9.29ms]
-(pass) matches compatible records and normalizes text [4.95ms]
-(pass) excludes incompatible characteristics [6.92ms]
-(pass) rejects invalid time intervals [0.79ms]
+(pass) rejects invalid time intervals [0.63ms]
+(pass) unspecified optional characteristics do not exclude matches [5.79ms]
+(pass) removing a record excludes it from search [5.83ms]
+(pass) matches compatible records and normalizes text [5.74ms]
+(pass) excludes incompatible characteristics [8.91ms]
+(pass) requireMatch checks current compatibility without changing entries [9.40ms]
 
 tests/Authenticating.test.ts:
-(pass) rejects invented sessions [1.08ms]
+(pass) rejects invented sessions [1.45ms]
 (pass) rejects invalid registration inputs [0.40ms]
-(pass) register, log in, authenticate, and log out [123.80ms]
-(pass) rejects incorrect credentials [109.64ms]
-(pass) rejects duplicate usernames [114.52ms]
+(pass) register, log in, authenticate, and log out [138.30ms]
+(pass) rejects incorrect credentials [118.82ms]
+(pass) rejects duplicate usernames [118.13ms]
 
 tests/Reports.test.ts:
-(pass) later matching uses stored found attributes and includes legacy missing reports [260.17ms]
-(pass) unauthorized, invalid, and closed edits leave reporting and matching unchanged [270.52ms]
-(pass) only the author of an open found record can request its matches [277.60ms]
-(pass) invalid or unauthenticated requests cannot create, list or close records [169.01ms]
-(pass) P2 documents remain missing, searchable, contactable and closable [297.96ms]
-(pass) editing missing reports updates search and saved-found matches before responding [327.26ms]
-(pass) later matches are recomputed on each request and exclude closed, incompatible, and self-authored reports [326.92ms]
-(pass) saved records are private, session-owned, persistent, and excluded from owner search [282.49ms]
-(pass) editing found records adds and removes current potential matches [297.53ms]
+(pass) later matching uses stored found attributes and includes legacy missing reports [277.38ms]
+(pass) unauthorized, invalid, and closed edits leave reporting and matching unchanged [290.27ms]
+(pass) only the author of an open found record can request its matches [269.78ms]
+(pass) invalid or unauthenticated requests cannot create, list or close records [158.38ms]
+(pass) P2 documents remain missing, searchable, contactable and closable [274.71ms]
+(pass) editing missing reports updates search and saved-found matches before responding [270.69ms]
+(pass) later matches are recomputed on each request and exclude closed, incompatible, and self-authored reports [306.78ms]
+(pass) saved records are private, session-owned, persistent, and excluded from owner search [265.78ms]
+(pass) editing found records adds and removes current potential matches [264.69ms]
 
 tests/ConversationLinking.test.ts:
-(pass) reserves and retrieves one identity per initiator/context across instances [13.06ms]
-(pass) simultaneous resolutions across instances converge without duplicate links [34.19ms]
+(pass) reserves and retrieves one identity per initiator/context across instances [15.65ms]
+(pass) simultaneous resolutions across instances converge without duplicate links [48.42ms]
 
 tests/Messaging.test.ts:
-(pass) participants can exchange messages in order [6.44ms]
-(pass) messages persist across concept instances [5.07ms]
-(pass) ensure rejects self conversations or changed participants without changing state [5.62ms]
-(pass) rejects invalid messages [3.67ms]
-(pass) rejects conversations with yourself [0.35ms]
-(pass) nonparticipants cannot read or send messages [4.46ms]
-(pass) ensure reuses reserved identities simultaneously without replacing messages [15.78ms]
-(pass) lists only the user's conversations [4.22ms]
-(pass) rejects unknown conversation IDs [0.60ms]
+(pass) participants can exchange messages in order [6.86ms]
+(pass) messages persist across concept instances [4.94ms]
+(pass) ensure rejects self conversations or changed participants without changing state [6.55ms]
+(pass) rejects invalid messages [3.52ms]
+(pass) rejects conversations with yourself [0.36ms]
+(pass) nonparticipants cannot read or send messages [4.17ms]
+(pass) ensure reuses reserved identities simultaneously without replacing messages [25.24ms]
+(pass) lists only the user's conversations [4.96ms]
+(pass) rejects unknown conversation IDs [0.74ms]
 
 tests/MessagesComposition.test.ts:
-(pass) labels show current report title and other username and messaging survives closure [382.74ms]
-(pass) repeated and simultaneous contact reuses exactly one conversation per finder/report [402.00ms]
-(pass) invalid contact targets and unknown sessions never reserve links or create conversations [253.71ms]
-(pass) legacy unlinked conversations remain listed with a username and readable messages [237.26ms]
+(pass) legacy unlinked conversations remain listed with a username and readable messages [238.60ms]
+(pass) labels show current report title and other username and messaging survives closure [390.20ms]
+(pass) saved contact uses the author's current stored found attributes and preserves existing messaging [403.69ms]
+(pass) invalid contact targets and unknown sessions never reserve links or create conversations [249.72ms]
+(pass) direct contact rejects missing search context and incompatible targets without side effects [272.23ms]
+(pass) repeated and simultaneous contact reuses exactly one conversation per finder/report [408.77ms]
 
 tests/ReportForm.test.ts:
-(pass) prefilled drafts preserve every characteristic and exact instants on a title-only edit [1.49ms]
+(pass) prefilled drafts preserve every characteristic and exact instants on a title-only edit [1.38ms]
 (pass) editing draft fields changes the payload without mutating the original [0.07ms]
 
  --seed=61040
- 46 pass
+ 49 pass
  0 fail
- 280 expect() calls
-Ran 46 tests across 8 files. [4.48s]
+ 319 expect() calls
+Ran 49 tests across 8 files. [5.10s]

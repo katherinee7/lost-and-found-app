@@ -91,13 +91,25 @@ export type BacktrackWire = {
   };
   "/messages/start": {
     input: {
+      "attributes": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["requireMatch"]>[0], ["attributes"]>>;
       "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["contactTarget"]>[0], ["report"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
       "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_PARTICIPANTS" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_MATCH_ATTRIBUTES" | "INVALID_PARTICIPANTS" | "NO_COMPATIBLE_RECORD" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+  };
+  "/messages/start-saved": {
+    input: {
+      "foundReport": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>>;
+      "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["contactTarget"]>[0], ["report"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
+    };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_MATCH_ATTRIBUTES" | "INVALID_PARTICIPANTS" | "NO_COMPATIBLE_RECORD" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
   };
   "/reports/close": {
     input: {
@@ -270,6 +282,18 @@ export type BacktrackWireHttp = {
   };
   "/messages/start": {
     input: {
+      "attributes": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Matching"]["requireMatch"]>[0], ["attributes"]>>;
+      "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["contactTarget"]>[0], ["report"]>>;
+      "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
+    };
+    output: {
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
+    };
+    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+  };
+  "/messages/start-saved": {
+    input: {
+      "foundReport": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>>;
       "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["contactTarget"]>[0], ["report"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };

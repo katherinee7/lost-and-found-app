@@ -44,7 +44,7 @@ test("repeated and simultaneous contact reuses exactly one conversation per find
   const secondHandler = createHttpHandler({ application: secondApplication, gateway: createGateway({ application: secondApplication }), policy });
   const starts = await Promise.all(Array.from({ length: 12 }, async (_, index) => {
     const response = await (index % 2 ? handler : secondHandler)(new Request("http://localhost/api/messages/start", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session: finder.session, report }),
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session: finder.session, report, attributes }),
     }));
     return response.json();
   }));
@@ -54,12 +54,12 @@ test("repeated and simultaneous contact reuses exactly one conversation per find
   expect(await db.collection("messaging.conversations").countDocuments()).toBe(1);
   expect(await db.collection("conversationlinking.links").countDocuments()).toBe(1);
   await post("/messages/send", { session: finder.session, conversation, text: "Hello" });
-  expect(await post("/messages/start", { session: finder.session, report })).toEqual({ conversation });
+  expect(await post("/messages/start", { attributes, session: finder.session, report })).toEqual({ conversation });
   expect((await post("/messages/read", { session: owner.session, conversation })).messages[0].text).toBe("Hello");
   const { report: different } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Another calculator", attributes });
-  expect((await post("/messages/start", { session: finder.session, report: different })).conversation).not.toBe(conversation);
+  expect((await post("/messages/start", { attributes, session: finder.session, report: different })).conversation).not.toBe(conversation);
   const otherFinder = await account("otherfinder");
-  expect((await post("/messages/start", { session: otherFinder.session, report })).conversation).not.toBe(conversation);
+  expect((await post("/messages/start", { attributes, session: otherFinder.session, report })).conversation).not.toBe(conversation);
   expect(await db.collection("messaging.conversations").countDocuments()).toBe(3);
 });
 
@@ -68,7 +68,7 @@ test("labels show current report title and other username and messaging survives
   const owner = await account("owner");
   const stranger = await account("stranger");
   const { report } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Calculator", attributes });
-  const { conversation } = await post("/messages/start", { session: finder.session, report });
+  const { conversation } = await post("/messages/start", { attributes, session: finder.session, report });
   expect((await post("/messages/list", { session: finder.session })).book.conversations).toEqual([
     { conversation, other: owner.user, title: "Calculator", username: "owner" },
   ]);
@@ -90,7 +90,7 @@ test("labels show current report title and other username and messaging survives
   await post("/messages/send", { session: finder.session, conversation, text: "Did you get it?" });
   await post("/messages/send", { session: owner.session, conversation, text: "Yes, thanks!" });
   expect((await post("/messages/read", { session: finder.session, conversation })).messages.map((m: { text: string }) => m.text)).toEqual(["Did you get it?", "Yes, thanks!"]);
-  expect((await post("/messages/start", { session: finder.session, report })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { attributes, session: finder.session, report })).error).toBe("NOT_FOUND");
 });
 
 test("legacy unlinked conversations remain listed with a username and readable messages", async () => {
@@ -109,13 +109,59 @@ test("invalid contact targets and unknown sessions never reserve links or create
   const owner = await account("owner");
   const finder = await account("finder");
   const { report } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Private", attributes });
-  expect((await post("/messages/start", { session: owner.session, report })).error).toBe("NOT_FOUND");
-  expect((await post("/messages/start", { session: "invented", report })).error).toBe("UNAUTHORIZED");
-  expect((await post("/messages/start", { session: finder.session, report: "unknown" })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { attributes, session: owner.session, report })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { attributes, session: "invented", report })).error).toBe("UNAUTHORIZED");
+  expect((await post("/messages/start", { attributes, session: finder.session, report: "unknown" })).error).toBe("NOT_FOUND");
   const { report: found } = await post("/reports/create", { session: owner.session, kind: "found", title: "Found", attributes });
-  expect((await post("/messages/start", { session: finder.session, report: found })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { attributes, session: finder.session, report: found })).error).toBe("NOT_FOUND");
   await post("/reports/close", { session: owner.session, report });
-  expect((await post("/messages/start", { session: finder.session, report })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { attributes, session: finder.session, report })).error).toBe("NOT_FOUND");
   expect(await db.collection("conversationlinking.links").countDocuments()).toBe(0);
   expect(await db.collection("messaging.conversations").countDocuments()).toBe(0);
+});
+
+test("direct contact rejects missing search context and incompatible targets without side effects", async () => {
+  const finder = await account("finder");
+  const owner = await account("owner");
+  const { report } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Calculator", attributes });
+  expect((await post("/messages/start", { session: finder.session, report })).error).toBe("INVALID_REQUEST");
+  for (const changed of [
+    { category: "Bags" }, { colors: ["red"] }, { brand: "Other" }, { locations: ["Gym"] },
+    { start: "2026-10-25T10:00:00Z", end: "2026-10-25T14:00:00Z" },
+  ]) {
+    expect((await post("/messages/start", { session: finder.session, report, attributes: { ...attributes, ...changed } })).error).toBe("NOT_FOUND");
+  }
+  expect(await db.collection("conversationlinking.links").countDocuments()).toBe(0);
+  expect(await db.collection("messaging.conversations").countDocuments()).toBe(0);
+  expect(typeof (await post("/messages/start", { session: finder.session, report, attributes })).conversation).toBe("string");
+});
+
+test("saved contact uses the author's current stored found attributes and preserves existing messaging", async () => {
+  const finder = await account("finder");
+  const owner = await account("owner");
+  const stranger = await account("stranger");
+  const { report } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Calculator", attributes });
+  const { report: foundReport } = await post("/reports/create", { session: finder.session, kind: "found", title: "Found", attributes: { ...attributes, colors: ["red"] } });
+  const contact = { session: finder.session, report, foundReport };
+  expect((await post("/messages/start-saved", { ...contact, attributes })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start-saved", { ...contact, session: stranger.session, author: finder.user })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start-saved", { ...contact, foundReport: report })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start-saved", { ...contact, session: "invented" })).error).toBe("UNAUTHORIZED");
+  expect(await db.collection("conversationlinking.links").countDocuments()).toBe(0);
+  expect(await db.collection("messaging.conversations").countDocuments()).toBe(0);
+  await post("/reports/update", { session: finder.session, report: foundReport, title: "Corrected found", attributes });
+  const { conversation } = await post("/messages/start-saved", contact);
+  expect(typeof conversation).toBe("string");
+  expect(await post("/messages/start", { session: finder.session, report, attributes })).toEqual({ conversation });
+  // A stale match result is no longer sufficient after the missing report is edited.
+  await post("/reports/update", { session: owner.session, report, title: "Edited", attributes: { ...attributes, brand: "Other" } });
+  expect((await post("/messages/start-saved", contact)).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start", { session: finder.session, report, attributes })).error).toBe("NOT_FOUND");
+  await post("/reports/close", { session: owner.session, report });
+  await post("/reports/close", { session: finder.session, report: foundReport });
+  expect((await post("/messages/start-saved", contact)).error).toBe("NOT_FOUND");
+  expect(typeof (await post("/messages/send", { session: finder.session, conversation, text: "Still here" })).message).toBe("string");
+  expect((await post("/messages/read", { session: owner.session, conversation })).messages[0].text).toBe("Still here");
+  expect(await db.collection("conversationlinking.links").countDocuments()).toBe(1);
+  expect(await db.collection("messaging.conversations").countDocuments()).toBe(1);
 });

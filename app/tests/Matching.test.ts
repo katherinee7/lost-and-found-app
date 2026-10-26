@@ -9,6 +9,7 @@ import { MongoClient } from "mongodb";
 import {
   MatchingConcept,
   InvalidMatchAttributes,
+  NoCompatibleRecord,
 } from "../src/concepts/Matching.ts";
 
 const url = process.env.MONGODB_URL;
@@ -124,4 +125,20 @@ test("rejects invalid time intervals", async () => {
       },
     }),
   ).rejects.toBeInstanceOf(InvalidMatchAttributes);
+});
+
+test("requireMatch checks current compatibility without changing entries", async () => {
+  await matching.register({ record: "calculator", attributes });
+  expect(await matching.requireMatch({ record: "calculator", attributes })).toEqual({ record: "calculator" });
+  for (const changed of [
+    { category: "Bags" }, { colors: ["red"] }, { brand: "Other" }, { locations: ["Gym"] },
+    { start: "2026-10-19T10:00:00Z", end: "2026-10-19T14:00:00Z" },
+  ]) {
+    await expect(matching.requireMatch({ record: "calculator", attributes: { ...attributes, ...changed } })).rejects.toBeInstanceOf(NoCompatibleRecord);
+  }
+  await expect(matching.requireMatch({ record: "unknown", attributes })).rejects.toBeInstanceOf(NoCompatibleRecord);
+  await expect(matching.requireMatch({ record: "calculator", attributes: { ...attributes, start: "bad" } })).rejects.toBeInstanceOf(InvalidMatchAttributes);
+  expect(await matching._search({ attributes })).toEqual([{ record: "calculator" }]);
+  await matching.remove({ record: "calculator" });
+  await expect(matching.requireMatch({ record: "calculator", attributes })).rejects.toBeInstanceOf(NoCompatibleRecord);
 });
