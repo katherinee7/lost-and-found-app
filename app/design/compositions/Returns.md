@@ -43,6 +43,12 @@ Its completed branch uses the same closure repair steps.
 An expandable Confirm return section follows the message composer. Either user
 can select I received my item (owner) or I returned the item (finder), once, in
 either order. The summary shows whose confirmation remains or Return complete.
+The expanded pending section contains the role-specific confirmation button and
+one short note: Once you both confirm, the linked reports close. After confirming,
+the summary says Confirmed and identifies the remaining participant. A finder
+who observes pending become complete sees a six-second, nonblocking Item returned!
++1 point status banner outside the collapsed section. Initial reads of already
+completed returns do not show the banner; polling does not repeat it.
 Both confirmations award one point and close associated reports; a direct search
 may have no associated saved report. Point totals say:
 "Earn 1 point per jointly confirmed return."

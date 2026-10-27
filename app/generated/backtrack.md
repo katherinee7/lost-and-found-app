@@ -904,7 +904,7 @@ then
 
 Authored path: `Returns.Balance`.
 - Covered by [Returns](../design/compositions/Returns.md), line 4.
-- Covered by [Returns](../design/compositions/Returns.md), line 54.
+- Covered by [Returns](../design/compositions/Returns.md), line 60.
 
 ```reaction
 when RequestBoundary.request (path: "/returns/balance", requestId, session)
@@ -916,7 +916,7 @@ then
 
 Authored path: `Returns.Balance`.
 - Covered by [Returns](../design/compositions/Returns.md), line 4.
-- Covered by [Returns](../design/compositions/Returns.md), line 54.
+- Covered by [Returns](../design/compositions/Returns.md), line 60.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Returns.Balance
@@ -928,7 +928,7 @@ then
 
 Authored path: `Returns.Balance`.
 - Covered by [Returns](../design/compositions/Returns.md), line 4.
-- Covered by [Returns](../design/compositions/Returns.md), line 54.
+- Covered by [Returns](../design/compositions/Returns.md), line 60.
 
 ```reaction
 when ContributionRewarding.balance (user, points), asked by Returns.Balance#2
@@ -942,7 +942,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/returns/begin", requestId, session)
@@ -954,7 +954,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Returns.Begin
@@ -968,7 +968,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Begin#2
@@ -980,7 +980,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ItemReporting.returnInfo (report, author: recipient), asked by Returns.Begin#3
@@ -994,7 +994,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when Messaging.checkParticipants (conversation, first: recipient, second: contributor), asked by Returns.Begin#4
@@ -1009,7 +1009,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ContributionRewarding.register (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Begin#5
@@ -1023,7 +1023,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ItemReporting.closeFound (author: contributor, report: source), asked by Returns.Begin:completedWithSavedRecord#9
@@ -1035,7 +1035,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when Matching.remove (record: source), asked by Returns.Begin:completedWithSavedRecord#10
@@ -1050,7 +1050,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Begin#6
@@ -1068,7 +1068,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ItemReporting.close (author: recipient, report), asked by Returns.Begin:completedWithSavedRecord#7
@@ -1080,7 +1080,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when Matching.remove (record: report), asked by Returns.Begin:completedWithSavedRecord#8
@@ -1095,7 +1095,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Begin#6
@@ -1113,7 +1113,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ItemReporting.close (author: recipient, report), asked by Returns.Begin:completedWithoutSavedRecord#7
@@ -1125,7 +1125,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when Matching.remove (record: report), asked by Returns.Begin:completedWithoutSavedRecord#8
@@ -1140,7 +1140,7 @@ then
 
 Authored path: `Returns.Begin`.
 - Covered by [Returns](../design/compositions/Returns.md), line 37.
-- Covered by [Returns](../design/compositions/Returns.md), line 51.
+- Covered by [Returns](../design/compositions/Returns.md), line 57.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Begin#6
@@ -1156,7 +1156,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/returns/confirm", requestId, session)
@@ -1168,7 +1168,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Returns.Confirm
@@ -1182,7 +1182,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Confirm#2
@@ -1194,7 +1194,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ItemReporting.returnInfo (report, author: recipient), asked by Returns.Confirm#3
@@ -1208,7 +1208,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when Messaging.checkParticipants (conversation, first: recipient, second: contributor), asked by Returns.Confirm#4
@@ -1223,7 +1223,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ContributionRewarding.acknowledge (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Confirm#5
@@ -1237,7 +1237,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ItemReporting.closeFound (author: contributor, report: source), asked by Returns.Confirm:completedWithSavedRecord#9
@@ -1249,7 +1249,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when Matching.remove (record: source), asked by Returns.Confirm:completedWithSavedRecord#10
@@ -1264,7 +1264,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Confirm#6
@@ -1282,7 +1282,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ItemReporting.close (author: recipient, report), asked by Returns.Confirm:completedWithSavedRecord#7
@@ -1294,7 +1294,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when Matching.remove (record: report), asked by Returns.Confirm:completedWithSavedRecord#8
@@ -1309,7 +1309,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Confirm#6
@@ -1327,7 +1327,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ItemReporting.close (author: recipient, report), asked by Returns.Confirm:completedWithoutSavedRecord#7
@@ -1339,7 +1339,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when Matching.remove (record: report), asked by Returns.Confirm:completedWithoutSavedRecord#8
@@ -1354,7 +1354,7 @@ then
 
 Authored path: `Returns.Confirm`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 52.
+- Covered by [Returns](../design/compositions/Returns.md), line 58.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Confirm#6
@@ -1370,7 +1370,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when RequestBoundary.request (conversation, path: "/returns/status", requestId, session)
@@ -1382,7 +1382,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when Authenticating.authenticate (session, user), asked by Returns.Status
@@ -1396,7 +1396,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ConversationLinking.get (conversation, context: report, initiator: contributor), asked by Returns.Status#2
@@ -1408,7 +1408,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ItemReporting.returnInfo (report, author: recipient), asked by Returns.Status#3
@@ -1422,7 +1422,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when Messaging.checkParticipants (conversation, first: recipient, second: contributor), asked by Returns.Status#4
@@ -1437,7 +1437,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ContributionRewarding.status (contribution: report, contributor, recipient, user, rewarded, status), asked by Returns.Status#5
@@ -1451,7 +1451,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ItemReporting.closeFound (author: contributor, report: source), asked by Returns.Status:completedWithSavedRecord#9
@@ -1463,7 +1463,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when Matching.remove (record: source), asked by Returns.Status:completedWithSavedRecord#10
@@ -1478,7 +1478,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Status#6
@@ -1496,7 +1496,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ItemReporting.close (author: recipient, report), asked by Returns.Status:completedWithSavedRecord#7
@@ -1508,7 +1508,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when Matching.remove (record: report), asked by Returns.Status:completedWithSavedRecord#8
@@ -1523,7 +1523,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Status#6
@@ -1541,7 +1541,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ItemReporting.close (author: recipient, report), asked by Returns.Status:completedWithoutSavedRecord#7
@@ -1553,7 +1553,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when Matching.remove (record: report), asked by Returns.Status:completedWithoutSavedRecord#8
@@ -1568,7 +1568,7 @@ then
 
 Authored path: `Returns.Status`.
 - Covered by [Returns](../design/compositions/Returns.md), line 3.
-- Covered by [Returns](../design/compositions/Returns.md), line 53.
+- Covered by [Returns](../design/compositions/Returns.md), line 59.
 
 ```reaction
 when ConversationLinking.source (conversation, hasSource, source), asked by Returns.Status#6

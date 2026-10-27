@@ -16,13 +16,15 @@ const loading = ref(true);
 const busy = ref(false);
 const error = ref("");
 const unavailable = ref("");
+const celebration = ref(false);
+let celebrationTimer: ReturnType<typeof setTimeout> | undefined;
 const summary = computed(() => {
   if (loading.value) return "Loading…";
   if (error.value) return "Status unavailable";
   if (unavailable.value) return "Unavailable here";
   if (status.value?.rewarded) return "Return complete";
   if (!status.value?.registered) return "Ready after the handoff";
-  if (ownConfirmed.value) return status.value?.role === "recipient" ? "Waiting for finder" : "Waiting for owner";
+  if (ownConfirmed.value) return status.value?.role === "recipient" ? "Confirmed · Waiting for finder" : "Confirmed · Waiting for owner";
   return "Your confirmation needed";
 });
 let disposed = false;
@@ -31,7 +33,13 @@ const ownConfirmed = computed(() => status.value?.role === "recipient"
   ? status.value?.recipientConfirmed : status.value?.contributorConfirmed);
 
 function apply(next: Status) {
+  const newlyCompleted = status.value !== null && !status.value.rewarded && next.rewarded;
   const changed = !status.value?.rewarded && next.rewarded;
+  if (newlyCompleted && next.role === "contributor") {
+    celebration.value = true;
+    clearTimeout(celebrationTimer);
+    celebrationTimer = setTimeout(() => { celebration.value = false; }, 6000);
+  }
   status.value = next;
 
   if (changed) emit("updated");
@@ -88,32 +96,26 @@ async function confirmReturn() {
 }
 
 onMounted(refresh);
-onUnmounted(() => { disposed = true; ++version; });
+onUnmounted(() => { disposed = true; ++version; clearTimeout(celebrationTimer); });
 defineExpose({ refresh });
 </script>
 
 <template>
+  <p v-if="celebration" class="status" role="status" aria-atomic="true">Item returned! +1 point</p>
   <details class="return-panel" :aria-busy="busy || loading">
     <summary><span>Confirm return</span><span class="hint" role="status">{{ summary }}</span></summary>
     <div class="return-content">
       <p v-if="loading" class="hint">Loading return status…</p>
       <p v-else-if="unavailable" class="hint">{{ unavailable }}</p>
       <template v-else-if="status">
-        <p v-if="status.rewarded" class="status">Return confirmed. Finder earned 1 point; associated reports closed.</p>
+        <p v-if="status.rewarded" class="hint">Linked reports closed.</p>
         <template v-else>
-          <p>After the handoff, each person confirms once. Either person can go first.</p>
-          <p class="hint">Both confirmations award the finder 1 point and close the missing report and its linked saved found item, if any.</p>
-          <ul v-if="status.registered" class="confirmation-list">
-            <li>Owner{{ status.role === 'recipient' ? ' (you)' : '' }}: {{ status.recipientConfirmed ? "Confirmed" : "Pending" }}</li>
-            <li>Finder{{ status.role === 'contributor' ? ' (you)' : '' }}: {{ status.contributorConfirmed ? "Confirmed" : "Pending" }}</li>
-          </ul>
-          <p v-if="ownConfirmed" class="hint">Your confirmation is saved. {{ status.role === 'recipient' ? 'The finder' : 'The owner' }} still needs to confirm.</p>
-          <button v-else class="primary" :disabled="busy" @click="confirmReturn">{{ busy ? "Saving…" : status.role === 'recipient' ? "I received my item" : "I returned the item" }}</button>
-          <p class="hint">Manual closing awards no points. You can still confirm after closing.</p>
+          <button v-if="!ownConfirmed" class="primary" :disabled="busy" @click="confirmReturn">{{ busy ? "Saving…" : status.role === 'recipient' ? "I received my item" : "I returned the item" }}</button>
+          <p class="hint">Once you both confirm, the linked reports close.</p>
         </template>
       </template>
       <p v-if="error" class="status error" role="alert">{{ error }}</p>
-      <button class="quiet" :disabled="busy || loading" @click="refresh">Refresh status</button>
+      <button v-if="error" class="quiet" :disabled="busy || loading" @click="refresh">Retry</button>
     </div>
   </details>
 </template>
@@ -123,5 +125,4 @@ defineExpose({ refresh });
 .return-panel summary { padding: 14px 16px; cursor: pointer; font-weight: 600; }
 .return-panel summary .hint { display: inline-block; margin-left: 12px; font-weight: 400; }
 .return-content { padding: 0 16px 16px; }
-.confirmation-list { margin: 12px 0; padding-left: 20px; }
 </style>

@@ -1,0 +1,1 @@
+PASS: mocked production UI: concise button/note, keyboard expansion, confirmed/waiting status, finder-only banner on pending → complete while collapsed, automatic dismissal, no banner for owner or completed reload, no runtime errors or horizontal overflow at 1280/360/320px. No database access.
