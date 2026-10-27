@@ -72,7 +72,8 @@ Reports.Matches at /reports/matches
 Jointly confirmed returns close the missing report through the Returns composition
 and remove its Matching entry. Manual Close remains available and never awards a
 point. Closed reports retain their data so registered participants can finish
-confirmation. Saved found records are closed separately by their authors.
+confirmation. Joint confirmation also closes the conversation's explicitly linked
+saved found record, if any; unrelated found records remain open.
 
 ### Navigation
 

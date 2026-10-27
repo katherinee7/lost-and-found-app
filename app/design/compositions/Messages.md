@@ -71,3 +71,9 @@ Return recognition is coordinated by [Returns](Returns.md). Report-linked
 conversations show confirmation status and owner/finder actions without changing
 Messaging membership or making Messaging depend on reports or rewards. Unlinked
 legacy conversations keep their messages but cannot initiate recognition.
+
+StartSaved attaches the validated found record as ConversationLinking's optional
+source after ensuring the conversation. Repeated contacts from the same source
+are idempotent; a different source cannot replace it and returns CONFLICT. This
+association enables Returns to close the specific found record without guessing.
+The source is never supplied by return-confirmation requests.

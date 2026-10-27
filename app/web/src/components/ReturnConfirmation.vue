@@ -21,7 +21,7 @@ const summary = computed(() => {
   if (error.value) return "Status unavailable";
   if (unavailable.value) return "Unavailable here";
   if (status.value?.rewarded) return "Return complete";
-  if (!status.value?.registered) return status.value?.role === "recipient" ? "Owner starts here" : "Waiting for owner to start";
+  if (!status.value?.registered) return "Ready after the handoff";
   if (ownConfirmed.value) return status.value?.role === "recipient" ? "Waiting for finder" : "Waiting for owner";
   return "Your confirmation needed";
 });
@@ -64,7 +64,7 @@ async function refresh() {
   }
 }
 
-async function act(action: "begin" | "confirm") {
+async function confirmReturn() {
   if (busy.value) return;
   busy.value = true;
   ++version; // Ignore a status response that started before this action.
@@ -72,7 +72,7 @@ async function act(action: "begin" | "confirm") {
 
   try {
     const input = { session: props.session, conversation: props.conversation };
-    const result = action === "begin" ? await client.returns.begin(input) : await client.returns.confirm(input);
+    const result = await client.returns.confirm(input);
     if (disposed) return;
     if ("error" in result) {
       throw new Error(result.error === "CONFLICT"
@@ -99,23 +99,17 @@ defineExpose({ refresh });
       <p v-if="loading" class="hint">Loading return status…</p>
       <p v-else-if="unavailable" class="hint">{{ unavailable }}</p>
       <template v-else-if="status">
-        <p v-if="status.rewarded" class="status">Return confirmed by both people. Finder earned 1 point; missing report closed.</p>
+        <p v-if="status.rewarded" class="status">Return confirmed. Finder earned 1 point; associated reports closed.</p>
         <template v-else>
-          <p>After the handoff, the owner starts confirmation. Then both people confirm below.</p>
-          <p class="hint">Both confirmations close the missing report and award the finder 1 point.</p>
-          <template v-if="!status.registered">
-            <button v-if="status.role === 'recipient'" class="primary" :disabled="busy" @click="act('begin')">{{ busy ? "Starting…" : "Start confirmation" }}</button>
-            <p v-else class="hint">Ask the owner to start confirmation here after receiving the item.</p>
-          </template>
-          <template v-else>
-            <ul class="confirmation-list">
-              <li>Owner{{ status.role === 'recipient' ? ' (you)' : '' }}: {{ status.recipientConfirmed ? "Confirmed" : "Pending" }}</li>
-              <li>Finder{{ status.role === 'contributor' ? ' (you)' : '' }}: {{ status.contributorConfirmed ? "Confirmed" : "Pending" }}</li>
-            </ul>
-            <p v-if="ownConfirmed" class="hint">Your confirmation is saved. {{ status.role === 'recipient' ? 'The finder' : 'The owner' }} still needs to confirm.</p>
-            <button v-else class="primary" :disabled="busy" @click="act('confirm')">{{ busy ? "Saving…" : status.role === 'recipient' ? "I received my item" : "I returned the item" }}</button>
-          </template>
-          <p class="hint">Already closed the report? You can still confirm here. Saved found items close separately.</p>
+          <p>After the handoff, each person confirms once. Either person can go first.</p>
+          <p class="hint">Both confirmations award the finder 1 point and close the missing report and its linked saved found item, if any.</p>
+          <ul v-if="status.registered" class="confirmation-list">
+            <li>Owner{{ status.role === 'recipient' ? ' (you)' : '' }}: {{ status.recipientConfirmed ? "Confirmed" : "Pending" }}</li>
+            <li>Finder{{ status.role === 'contributor' ? ' (you)' : '' }}: {{ status.contributorConfirmed ? "Confirmed" : "Pending" }}</li>
+          </ul>
+          <p v-if="ownConfirmed" class="hint">Your confirmation is saved. {{ status.role === 'recipient' ? 'The finder' : 'The owner' }} still needs to confirm.</p>
+          <button v-else class="primary" :disabled="busy" @click="confirmReturn">{{ busy ? "Saving…" : status.role === 'recipient' ? "I received my item" : "I returned the item" }}</button>
+          <p class="hint">Manual closing awards no points. You can still confirm after closing.</p>
         </template>
       </template>
       <p v-if="error" class="status error" role="alert">{{ error }}</p>

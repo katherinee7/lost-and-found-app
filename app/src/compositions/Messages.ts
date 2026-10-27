@@ -169,6 +169,7 @@ const StartSaved = endpoint(
       .then(
         Messaging.ensure({ conversation, first: user, second: owner }),
       )
+      .then(ConversationLinking.attach({ conversation, source: foundReport }))
       .then(respond({ conversation })),
   {
     input: { required: ["session", "report", "foundReport"] },

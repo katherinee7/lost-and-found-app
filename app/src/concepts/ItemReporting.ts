@@ -185,6 +185,12 @@ export class ItemReportingConcept {
     return { report };
   }
 
+  async closeFound({ author, report }: { author: string; report: string }) {
+    const result = await this.reports.updateOne({ _id: report, author, kind: "found" }, { $set: { open: false } });
+    if (!result.matchedCount) throw new ReportUnavailable("That report is unavailable.");
+    return { report };
+  }
+
   async readFound({ author, report }: {
     author: string;
     report: string;

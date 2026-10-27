@@ -70,6 +70,15 @@ update (author: User, report: Report, title: String, attributes: Attributes) : r
     preserve its author, kind, identity, and open status
     returns report
 
+closeFound (author: User, report: Report) : returns (report: Report)
+  where report does not exist, is not found, or author does not own it
+  then
+    refuses REPORT_UNAVAILABLE "That report is unavailable."
+  where report is found and author owns it
+  then
+    set open to false, preserving content even if already closed
+    returns report
+
 close (author: User, report: Report) : returns (report: Report)
   where report does not exist or author is not its author
   then

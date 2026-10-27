@@ -102,14 +102,14 @@ export type BacktrackWire = {
   };
   "/messages/start-saved": {
     input: {
-      "foundReport": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>>;
+      "foundReport": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["attach"]>[0], ["source"]>]>>;
       "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["contactTarget"]>[0], ["report"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["attach"]>[0], ["conversation"]>>;
     };
-    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_MATCH_ATTRIBUTES" | "INVALID_PARTICIPANTS" | "NO_COMPATIBLE_RECORD" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+    error: { error: AppWideError | "INVALID_INPUT" | "INVALID_MATCH_ATTRIBUTES" | "INVALID_PARTICIPANTS" | "LINK_CONFLICT" | "NO_COMPATIBLE_RECORD" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
   };
   "/reports/close": {
     input: {
@@ -211,10 +211,12 @@ export type BacktrackWire = {
   };
   "/returns/begin": {
     input: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["source"]>[0], ["conversation"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
+    } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
     } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
@@ -223,22 +225,26 @@ export type BacktrackWire = {
   };
   "/returns/confirm": {
     input: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["source"]>[0], ["conversation"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
-      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["acknowledge"]>>, ["status"]>>;
     } | {
-      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["acknowledge"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["acknowledge"]>>, ["status"]>>;
     };
-    error: { error: AppWideError | "CONTRIBUTION_UNAVAILABLE" | "CONVERSATION_UNAVAILABLE" | "INVALID_INPUT" | "LINK_UNAVAILABLE" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
+    error: { error: AppWideError | "CONTRIBUTION_CONFLICT" | "CONTRIBUTION_UNAVAILABLE" | "CONVERSATION_UNAVAILABLE" | "INVALID_CONTRIBUTION" | "INVALID_INPUT" | "LINK_UNAVAILABLE" | "REPORT_UNAVAILABLE" | "UNKNOWN_SESSION" };
   };
   "/returns/status": {
     input: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["source"]>[0], ["conversation"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
+    } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
     } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
@@ -338,14 +344,14 @@ export type BacktrackWireHttp = {
   };
   "/messages/start-saved": {
     input: {
-      "foundReport": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>>;
+      "foundReport": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["readFound"]>[0], ["report"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["attach"]>[0], ["source"]>]>>;
       "report": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ItemReporting"]["contactTarget"]>[0], ["report"]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Messaging"]["ensure"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["attach"]>[0], ["conversation"]>>;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/reports/close": {
     input: {
@@ -447,10 +453,12 @@ export type BacktrackWireHttp = {
   };
   "/returns/begin": {
     input: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["source"]>[0], ["conversation"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
+    } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
     } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["register"]>>, ["status"]>>;
@@ -459,22 +467,26 @@ export type BacktrackWireHttp = {
   };
   "/returns/confirm": {
     input: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["source"]>[0], ["conversation"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
-      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["acknowledge"]>>, ["status"]>>;
     } | {
-      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["confirm"]>>, ["status"]>>;
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["acknowledge"]>>, ["status"]>>;
+    } | {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["acknowledge"]>>, ["status"]>>;
     };
-    error: { error: HttpAppWideError | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
+    error: { error: HttpAppWideError | "CONFLICT" | "INVALID_REQUEST" | "NOT_FOUND" | "UNAUTHORIZED" };
   };
   "/returns/status": {
     input: {
-      "conversation": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>>;
+      "conversation": Jsonify<OneOf<[AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["get"]>[0], ["conversation"]>, AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["ConversationLinking"]["source"]>[0], ["conversation"]>]>>;
       "session": Jsonify<AtPath<Parameters<(typeof ApplicationConceptSet.concepts)["Authenticating"]["authenticate"]>[0], ["session"]>>;
     };
     output: {
+      "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
+    } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;
     } | {
       "status": Jsonify<AtPath<Awaited<ReturnType<(typeof ApplicationConceptSet.concepts)["ContributionRewarding"]["status"]>>, ["status"]>>;

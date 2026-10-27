@@ -1,0 +1,6 @@
+PASS: finder first; one action each, first gives no point, second awards exactly 1, both associated records close, unrelated record remains, reload persists completion, messaging continues.
+PASS: owner first; one action each, first gives no point, second awards exactly 1, both associated records close, unrelated record remains, reload persists completion, messaging continues.
+PASS: 1280px; no overflow or automated WCAG A/AA violations.
+PASS: 360px; no overflow or automated WCAG A/AA violations.
+PASS: 320px; no overflow or automated WCAG A/AA violations.
+Local production preview, real HTTP endpoints and isolated temporary MongoDB database; not deployed testing. No browser runtime errors.

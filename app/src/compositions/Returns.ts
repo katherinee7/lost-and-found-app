@@ -21,54 +21,75 @@ const statusOutput: EndpointValidator = value => {
 const balanceOutput: EndpointValidator = value => object(value) && Number.isSafeInteger(value.points) && (value.points as number) >= 0
   ? { ok: true } : { ok: false, detail: "Expected a point total." };
 
-const Begin = endpoint("/returns/begin", ({ session, conversation, user, report, contributor, recipient, status, rewarded }) =>
+const Begin = endpoint("/returns/begin", ({ session, conversation, user, report, contributor, recipient, status, rewarded, hasSource, source }) =>
   receive({ session, conversation })
     .then(Authenticating.authenticate({ session }).responds({ user }))
     .then(ConversationLinking.get({ conversation }).responds({ context: report, initiator: contributor }))
     .then(ItemReporting.returnInfo({ report }).responds({ author: recipient }))
     .then(Messaging.checkParticipants({ conversation, first: recipient, second: contributor }))
     .then(ContributionRewarding.register({ user, contribution: report, contributor, recipient }).responds({ status, rewarded }))
+    .then(ConversationLinking.source({ conversation }).responds({ hasSource, source }))
     .then(
       where(is.among(rewarded, [false])).then(respond({ status })).named("pending"),
-      where(is.among(rewarded, [true]))
+      where(is.among(rewarded, [true]), is.among(hasSource, [false]))
         .then(ItemReporting.close({ author: recipient, report }))
         .then(Matching.remove({ record: report }))
-        .then(respond({ status })).named("completed"),
+        .then(respond({ status })).named("completedWithoutSavedRecord"),
+      where(is.among(rewarded, [true]), is.among(hasSource, [true]))
+        .then(ItemReporting.close({ author: recipient, report }))
+        .then(Matching.remove({ record: report }))
+        .then(ItemReporting.closeFound({ author: contributor, report: source }))
+        .then(Matching.remove({ record: source }))
+        .then(respond({ status })).named("completedWithSavedRecord"),
     ),
   { input: { required: ["session", "conversation"] }, validators: { input: conversationInput, output: statusOutput } },
 );
 
-const Confirm = endpoint("/returns/confirm", ({ session, conversation, user, report, contributor, recipient, status, rewarded }) =>
+const Confirm = endpoint("/returns/confirm", ({ session, conversation, user, report, contributor, recipient, status, rewarded, hasSource, source }) =>
   receive({ session, conversation })
     .then(Authenticating.authenticate({ session }).responds({ user }))
     .then(ConversationLinking.get({ conversation }).responds({ context: report, initiator: contributor }))
     .then(ItemReporting.returnInfo({ report }).responds({ author: recipient }))
     .then(Messaging.checkParticipants({ conversation, first: recipient, second: contributor }))
-    .then(ContributionRewarding.confirm({ user, contribution: report, contributor }).responds({ status, rewarded, recipient }))
+    .then(ContributionRewarding.acknowledge({ user, contribution: report, contributor, recipient }).responds({ status, rewarded, recipient }))
+    .then(ConversationLinking.source({ conversation }).responds({ hasSource, source }))
     .then(
       where(is.among(rewarded, [false])).then(respond({ status })).named("pending"),
-      where(is.among(rewarded, [true]))
+      where(is.among(rewarded, [true]), is.among(hasSource, [false]))
         .then(ItemReporting.close({ author: recipient, report }))
         .then(Matching.remove({ record: report }))
-        .then(respond({ status })).named("completed"),
+        .then(respond({ status })).named("completedWithoutSavedRecord"),
+      where(is.among(rewarded, [true]), is.among(hasSource, [true]))
+        .then(ItemReporting.close({ author: recipient, report }))
+        .then(Matching.remove({ record: report }))
+        .then(ItemReporting.closeFound({ author: contributor, report: source }))
+        .then(Matching.remove({ record: source }))
+        .then(respond({ status })).named("completedWithSavedRecord"),
     ),
   { input: { required: ["session", "conversation"] }, validators: { input: conversationInput, output: statusOutput } },
 );
 
 // Completed status reads also repair a prior failure between reward and closure.
-const Status = endpoint("/returns/status", ({ session, conversation, user, report, contributor, recipient, status, rewarded }) =>
+const Status = endpoint("/returns/status", ({ session, conversation, user, report, contributor, recipient, status, rewarded, hasSource, source }) =>
   receive({ session, conversation })
     .then(Authenticating.authenticate({ session }).responds({ user }))
     .then(ConversationLinking.get({ conversation }).responds({ context: report, initiator: contributor }))
     .then(ItemReporting.returnInfo({ report }).responds({ author: recipient }))
     .then(Messaging.checkParticipants({ conversation, first: recipient, second: contributor }))
     .then(ContributionRewarding.status({ user, contribution: report, contributor, recipient }).responds({ status, rewarded }))
+    .then(ConversationLinking.source({ conversation }).responds({ hasSource, source }))
     .then(
       where(is.among(rewarded, [false])).then(respond({ status })).named("pending"),
-      where(is.among(rewarded, [true]))
+      where(is.among(rewarded, [true]), is.among(hasSource, [false]))
         .then(ItemReporting.close({ author: recipient, report }))
         .then(Matching.remove({ record: report }))
-        .then(respond({ status })).named("completed"),
+        .then(respond({ status })).named("completedWithoutSavedRecord"),
+      where(is.among(rewarded, [true]), is.among(hasSource, [true]))
+        .then(ItemReporting.close({ author: recipient, report }))
+        .then(Matching.remove({ record: report }))
+        .then(ItemReporting.closeFound({ author: contributor, report: source }))
+        .then(Matching.remove({ record: source }))
+        .then(respond({ status })).named("completedWithSavedRecord"),
     ),
   { input: { required: ["session", "conversation"] }, validators: { input: conversationInput, output: statusOutput } },
 );

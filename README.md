@@ -1,4 +1,4 @@
-# Campus Lost and Found
+# Backtrack
 
 A campus application that helps owners and finders reconnect
 and coordinate the return of lost belongings.
@@ -17,17 +17,26 @@ and coordinate the return of lost belongings.
 
 - [Core user journey](p2.md)
 
-## P3 progress
+## P3: Beta
 
-- [Live app](https://backtrack.mit-sdg.dev/)
-- [Updated user journey](p3.md#core-user-journey)
-- [Demo video on YouTube](https://youtu.be/K1QgDSjdvWE)
+- [User journey](p3.md)
+- [P3 demo video](https://youtu.be/K1QgDSjdvWE)
 - [Visual design study](images/visual_study.pdf)
-- [Specifications](app/design/)
+
+## P4: Code complete
+
+- [Final design document](p4-design.md)
+- [Live app](https://backtrack.mit-sdg.dev/)
+- [Final demo video](REPLACE_WITH_P4_VIDEO_URL)
+- [Current concept specifications and compositions](app/design/)
+
+### Testing and validation
+
 - [Automated tests](app/tests/)
-- [Return confirmation behavior and retry handling](app/design/compositions/Returns.md)
+- Latest full-suite results:
+  [standard](app/tests/results/final-tests.txt) and
+  [randomized](app/tests/results/final-tests-randomized.txt)
 - [Manual return-confirmation checklist](app/tests/manual-returns.md)
-- [Saved test output](app/tests/results/)
 
 ## Setup
 
@@ -82,7 +91,15 @@ clears its temporary database and recreates its concept instances or application
 assembly. Each test creates its own required data through concept actions.
 The application database is not cleared or modified.
 
-[Saved test output](app/tests/results/)
+[All saved test output](app/tests/results/).
 
-Latest complete runs: [standard order](app/tests/results/final-tests.txt) and
-[randomized order, seed 61040](app/tests/results/final-tests-randomized.txt).
+## Local production preview
+
+```sh
+bun run preview
+```
+
+Open http://127.0.0.1:3000. This builds and serves the Vue frontend through the
+backend, with API requests under `/api`. It uses the local database configured
+in `app/.env`; the deployed app has its own database. The preview is optional
+after deployment, but useful for checking production behavior locally.

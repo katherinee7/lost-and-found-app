@@ -30,6 +30,7 @@ a set of Links with
   an initiator User
   a context Context
   a conversation Conversation
+  an optional source Context
   unique initiator and context
   unique conversation
 ```
@@ -37,6 +38,24 @@ a set of Links with
 ## Actions
 
 ```actions
+attach (conversation: Conversation, source: Context) : returns (conversation: Conversation)
+  where conversation is unknown or has a different source
+  then
+    refuses LINK_CONFLICT "This conversation is already linked to another source or is unavailable."
+  where conversation exists and source is absent or the same
+  then
+    atomically associate source without replacing an existing different source
+    returns conversation
+
+source (conversation: Conversation) : returns (hasSource: Flag, source: Context)
+  where conversation has no link
+  then
+    refuses LINK_UNAVAILABLE "That conversation has no linked context."
+  where conversation has a link
+  then
+    bind hasSource to whether a source exists and source to it or an unused empty identity
+    returns hasSource, source
+
 get (conversation: Conversation) : returns (context: Context, initiator: User)
   where conversation has no link
   then

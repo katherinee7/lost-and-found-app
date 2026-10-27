@@ -1,5 +1,5 @@
 import linkingSpec from "../design/concepts/ConversationLinking.md" with { type: "text" };
-import { ConversationLinkingConcept, LinkUnavailable } from "./concepts/ConversationLinking.ts";
+import { ConversationLinkingConcept, LinkUnavailable, LinkConflict } from "./concepts/ConversationLinking.ts";
 import reportingSpec from "../design/concepts/ItemReporting.md" with { type: "text" };
 
 import {
@@ -83,7 +83,7 @@ const messaging = registerConcept({
 
 const conversationLinking = registerConcept({
   class: ConversationLinkingConcept, spec: linkingSpec,
-  refusals: { LINK_UNAVAILABLE: LinkUnavailable },
+  refusals: { LINK_UNAVAILABLE: LinkUnavailable, LINK_CONFLICT: LinkConflict },
 });
 
 import rewardingSpec from "../design/concepts/ContributionRewarding.md" with { type: "text" };

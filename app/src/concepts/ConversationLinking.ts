@@ -1,12 +1,14 @@
 import { MongoServerError, type Collection, type Db } from "mongodb";
 
 export class LinkUnavailable extends Error {}
+export class LinkConflict extends Error {}
 
 interface LinkDocument {
   _id: string;
   initiator: string;
   context: string;
   conversation: string;
+  source?: string;
 }
 
 /** Reserve stable identifiers without knowing what the context represents. */
@@ -42,6 +44,21 @@ export class ConversationLinkingConcept {
     const link = await this.links.findOne({ conversation });
     if (!link) throw new LinkUnavailable("That conversation has no linked context.");
     return { context: link.context, initiator: link.initiator };
+  }
+
+  async attach({ conversation, source }: { conversation: string; source: string }) {
+    const result = await this.links.updateOne(
+      { conversation, $or: [{ source: { $exists: false } }, { source }] },
+      { $set: { source } },
+    );
+    if (!result.matchedCount) throw new LinkConflict("This conversation is already linked to another source or is unavailable.");
+    return { conversation };
+  }
+
+  async source({ conversation }: { conversation: string }) {
+    const link = await this.links.findOne({ conversation });
+    if (!link) throw new LinkUnavailable("That conversation has no linked context.");
+    return { hasSource: !!link.source, source: link.source ?? "" };
   }
 
   async _context({ conversation }: { conversation: string }) {

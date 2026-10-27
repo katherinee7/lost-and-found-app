@@ -241,7 +241,9 @@ async function contactOwner(report: string, foundReport: string) {
     if ("error" in result) {
       throw new Error(result.error === "NOT_FOUND"
         ? "That report is no longer a compatible match. Refresh to update matches."
-        : `Could not start conversation: ${result.error}`);
+        : result.error === "CONFLICT"
+          ? "This conversation is linked to a different saved item. Open it in Messages to continue."
+          : `Could not start conversation: ${result.error}`);
     }
     emit("contact", result.conversation);
   } catch (error) {

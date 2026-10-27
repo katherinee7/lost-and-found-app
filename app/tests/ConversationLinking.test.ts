@@ -35,3 +35,14 @@ test("get returns a reserved context and initiator and rejects unlinked conversa
   await expect(linking.get({ conversation: "unknown" })).rejects.toBeInstanceOf(LinkUnavailable);
   expect(await linking._context({ conversation })).toEqual([{ context: "report" }]);
 });
+
+test("source association is optional, persistent, idempotent and cannot be replaced", async () => {
+  const link = await linking.resolve({ initiator: "finder", context: "report" });
+  expect(await linking.source(link)).toEqual({ hasSource: false, source: "" });
+  await linking.attach({ ...link, source: "saved" });
+  await linking.attach({ ...link, source: "saved" });
+  expect(await new ConversationLinkingConcept(db).source(link)).toEqual({ hasSource: true, source: "saved" });
+  await expect(linking.attach({ ...link, source: "different" })).rejects.toThrow();
+  await expect(linking.attach({ conversation: "unknown", source: "saved" })).rejects.toThrow();
+  expect(await linking.source(link)).toEqual({ hasSource: true, source: "saved" });
+});

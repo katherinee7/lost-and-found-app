@@ -1,45 +1,50 @@
 # Returns
 
-Users can [begin return confirmation](reaction:Returns.Begin),
-[confirm a return](reaction:Returns.Confirm), [read its status](reaction:Returns.Status),
+Users [confirm a return](reaction:Returns.Confirm), [read its status](reaction:Returns.Status),
 and [read their point total](reaction:Returns.Balance).
 
-Each request authenticates its session. Conversation requests accept only session
-and conversation ID. The composition obtains report and finder from
-ConversationLinking.get, obtains owner from ItemReporting.returnInfo, and checks
-that Messaging contains exactly the owner and finder. ContributionRewarding
-then enforces the acting user's role. Client participant IDs and report IDs are
-never used for registration or confirmation. Unlinked legacy conversations
-cannot start confirmations, but remain available for ordinary messaging.
+## Authentication and participant selection
 
-Begin is owner-only and registers the missing report ID as the contribution.
-Registration is idempotent for the same owner/finder and rejects a different
-finder, including one from another valid conversation about the same report.
-Both participants must subsequently confirm; starting does not count as a
-confirmation. A missing report may already be closed when the owner starts,
-and registered participants may finish after any manual closure. Closure alone
-never registers, confirms, or awards a contribution. Saved found records are
-closed separately by their authors.
+Requests accept session and conversation, never trusted participant/report IDs.
+The composition authenticates, reads the report and finder from ConversationLinking,
+reads the owner from ItemReporting.returnInfo, and checks the exact two Messaging
+participants. Unlinked legacy conversations remain usable for messages but cannot
+confirm returns.
 
-ContributionRewarding is independent of reports and messaging. Its unique
-contribution entry contains immutable participants and atomically updated
-confirmations/completion. Balance counts completed entries rather than
-incrementing a separate counter, so each missing report contributes at most one
-point under retries, concurrency, and application restarts.
+Either participant confirms once using ContributionRewarding.acknowledge. The
+finder's first confirmation is an intention for that pair, not a reservation of
+the report. Only the owner's confirmation selects the finder; other finders'
+early confirmations cannot block that choice. Concurrent owner confirmations for
+different finders select at most one pair. Existing owner registrations and
+confirmations retain their meaning. Repeated requests cannot award again.
 
-Begin, Confirm, and Status branch on the action's returned rewarded flag (not
-mutable standing state). If complete, they idempotently close the missing report
-and remove its Matching entry before replying. Otherwise they reply with pending
-status. If either closure step fails after reward completion, the durable reward
-entry is retained and any repeated confirm, begin, or status request retries
-both steps. No in-memory event must survive a crash. Status is therefore also a
-repair operation for completed returns. A finder cannot replace the registered
-finder by using a different conversation. Existing read/send access is unaffected.
+## Automatic closure and retry
 
-The conversation UI shows who has confirmed, an owner-only start action, and a
-confirmation action for each registered participant. Conflicts from other
-finder conversations display an explanation without replacing the registration.
-The logged-in user sees their balance and the text:
+Messages.StartSaved validates the finder's owned open found record and current
+compatibility, then attaches that record as the conversation's source. An existing
+conversation can acquire a source, but a different source cannot replace it.
+Direct searches have no source unless explicitly linked by a later saved contact.
+Older associations are not guessed or inferred from matching attributes.
+
+After both confirm, the composition closes the missing report and removes it
+from Matching. If a source is linked, ItemReporting.closeFound requires that it
+be a found record owned by the finder; it too is closed and removed from Matching.
+Unrelated records remain open. Manual close awards nothing; either participant
+may confirm after manual closing. Missing and source closing are idempotent.
+
+Reward state persists before closure. Confirm and Status retry every closure
+step after completion, repairing partial failures without awarding a second
+point. The retained [legacy owner-only Begin endpoint](reaction:Returns.Begin) can register a pair for
+older clients; it is not used by the current UI and is not required to confirm.
+Its completed branch uses the same closure repair steps.
+
+## Interface
+
+An expandable Confirm return section follows the message composer. Either user
+can select I received my item (owner) or I returned the item (finder), once, in
+either order. The summary shows whose confirmation remains or Return complete.
+Both confirmations award one point and close associated reports; a direct search
+may have no associated saved report. Point totals say:
 "Earn 1 point per jointly confirmed return."
 
 ```endpoints
@@ -48,13 +53,3 @@ Returns.Confirm at /returns/confirm
 Returns.Status at /returns/status
 Returns.Balance at /returns/balance
 ```
-
-### Confirmation interface
-
-An expandable Confirm return section follows the message composer, keeping replies
-next to message history. Its summary shows who acts next or Return complete.
-The owner selects Start confirmation after the handoff; each participant then
-selects I received my item or I returned the item. Pending status identifies the
-current user and the other role. Both confirmations are required; starting alone
-is not a confirmation. The section explains points, report closure, and separate
-closure of saved found items. Expansion uses native keyboard-accessible details.

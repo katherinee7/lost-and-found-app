@@ -96,7 +96,7 @@ test("concurrent requests and different conversations cannot award twice or subs
   await Promise.all(Array.from({ length: 6 }, () => post("/returns/begin", { session: owner.session, conversation })));
   expect((await post("/returns/begin", { session: owner.session, conversation: other })).error).toBe("CONFLICT");
   expect((await post("/returns/status", { session: stranger.session, conversation: other })).error).toBe("CONFLICT");
-  expect((await post("/returns/confirm", { session: owner.session, conversation: other })).error).toBe("NOT_FOUND");
+  expect((await post("/returns/confirm", { session: owner.session, conversation: other })).error).toBe("CONFLICT");
   const application = assembleApplication(db);
   const otherHandler = createHttpHandler({ application, gateway: createGateway({ application }), policy });
   const results = await Promise.all(Array.from({ length: 10 }, async (_, i) => {
@@ -158,4 +158,82 @@ test("a failed close or matching removal after reward completion is repaired on 
   expect((await post("/returns/status", { session: finder.session, conversation })).status.rewarded).toBe(true);
   expect(await db.collection("matching.entries").findOne({ _id: report })).toBeNull();
   expect(await post("/returns/balance", { session: finder.session })).toEqual({ points: 1 });
+});
+
+
+test("two confirmations in either order close the missing and linked saved record, not unrelated items", async () => {
+  const { owner, finder, stranger } = await journey();
+  for (const first of [owner, finder]) {
+    const { report } = await post("/reports/create", { session: owner.session, kind: "missing", title: "Two-click return", attributes });
+    const { report: saved } = await post("/reports/create", { session: finder.session, kind: "found", title: "Linked found item", attributes });
+    const { report: unrelated } = await post("/reports/create", { session: finder.session, kind: "found", title: "Unrelated found item", attributes });
+    const { conversation } = await post("/messages/start-saved", { session: finder.session, report, foundReport: saved });
+    const before = (await post("/returns/balance", { session: finder.session })).points;
+    expect((await post("/returns/confirm", { session: first.session, conversation })).status.rewarded).toBe(false);
+    expect((await post("/reports/list", { session: finder.session })).book.reports.find((r: { report: string }) => r.report === saved).open).toBe(true);
+    const second = first === owner ? finder : owner;
+    const app = assembleApplication(db);
+    handler = createHttpHandler({ application: app, gateway: createGateway({ application: app }), policy });
+    expect((await post("/returns/confirm", { session: second.session, conversation, foundReport: unrelated, contributor: stranger.user })).status.rewarded).toBe(true);
+    expect((await post("/reports/list", { session: owner.session })).book.reports.find((r: { report: string }) => r.report === report).open).toBe(false);
+    const own = (await post("/reports/list", { session: finder.session })).book.reports;
+    expect(own.find((r: { report: string }) => r.report === saved).open).toBe(false);
+    expect(own.find((r: { report: string }) => r.report === unrelated).open).toBe(true);
+    expect(await db.collection("matching.entries").findOne({ _id: saved })).toBeNull();
+    expect((await post("/returns/balance", { session: finder.session })).points).toBe(before + 1);
+    await post("/returns/confirm", { session: first.session, conversation });
+    expect((await post("/returns/balance", { session: finder.session })).points).toBe(before + 1);
+  }
+});
+
+test("an early finder cannot block the owner confirming with another finder", async () => {
+  const { owner, finder, stranger, report, conversation } = await journey();
+  expect((await post("/returns/confirm", { session: finder.session, conversation })).status.contributorConfirmed).toBe(true);
+  expect(await post("/returns/balance", { session: finder.session })).toEqual({ points: 0 });
+  const { conversation: other } = await post("/messages/start", { session: stranger.session, report, attributes });
+  expect((await post("/returns/confirm", { session: owner.session, conversation: other })).status.recipientConfirmed).toBe(true);
+  expect((await post("/returns/confirm", { session: stranger.session, conversation: other })).status.rewarded).toBe(true);
+  expect(await post("/returns/balance", { session: stranger.session })).toEqual({ points: 1 });
+  expect((await post("/returns/confirm", { session: owner.session, conversation })).error).toBe("CONFLICT");
+  expect(await post("/returns/balance", { session: finder.session })).toEqual({ points: 0 });
+});
+
+test("saved-source authorization and retry after found-close failure", async () => {
+  const { owner, finder, stranger, report, conversation } = await journey();
+  const { report: saved } = await post("/reports/create", { session: finder.session, kind: "found", title: "Saved", attributes });
+  const { report: other } = await post("/reports/create", { session: stranger.session, kind: "found", title: "Private", attributes });
+  expect((await post("/messages/start-saved", { session: finder.session, report, foundReport: other })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start-saved", { session: finder.session, report, foundReport: report })).error).toBe("NOT_FOUND");
+  expect((await post("/messages/start-saved", { session: finder.session, report, foundReport: saved })).conversation).toBe(conversation);
+  expect((await post("/messages/start-saved", { session: finder.session, report, foundReport: saved })).conversation).toBe(conversation);
+  await post("/returns/confirm", { session: finder.session, conversation });
+  const spy = spyOn(ItemReportingConcept.prototype, "closeFound").mockRejectedValueOnce(new Error("Injected found-close failure"));
+  try {
+    const app = assembleApplication(db);
+    const failing = createHttpHandler({ application: app, gateway: createGateway({ application: app }), policy });
+    await failing(new Request("http://localhost/api/returns/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ session: owner.session, conversation }) }));
+    expect(await post("/returns/balance", { session: finder.session })).toEqual({ points: 1 });
+    expect((await db.collection("itemreporting.reports").findOne({ _id: saved }))?.open).toBe(true);
+  } finally { spy.mockRestore(); }
+  const app = assembleApplication(db);
+  handler = createHttpHandler({ application: app, gateway: createGateway({ application: app }), policy });
+  expect((await post("/returns/status", { session: owner.session, conversation })).status.rewarded).toBe(true);
+  expect((await db.collection("itemreporting.reports").findOne({ _id: saved }))?.open).toBe(false);
+  expect(await post("/returns/balance", { session: finder.session })).toEqual({ points: 1 });
+});
+
+test("simultaneous first confirmations across application instances need no initiation and award once", async () => {
+  const { owner, finder, report, conversation } = await journey();
+  const app = assembleApplication(db);
+  const other = createHttpHandler({ application: app, gateway: createGateway({ application: app }), policy });
+  const results = await Promise.all(Array.from({ length: 12 }, async (_, i) => {
+    const response = await (i % 2 ? handler : other)(new Request("http://localhost/api/returns/confirm", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session: i % 2 ? owner.session : finder.session, conversation }),
+    }));
+    return response.json();
+  }));
+  expect(results.every(result => !result.error)).toBe(true);
+  expect(await post("/returns/balance", { session: finder.session })).toEqual({ points: 1 });
+  expect((await db.collection("itemreporting.reports").findOne({ _id: report }))?.open).toBe(false);
 });

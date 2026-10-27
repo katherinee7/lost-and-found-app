@@ -221,3 +221,15 @@ test("returnInfo supports existing missing reports and manual closure but reject
   await expect(reporting.returnInfo({ report: found })).rejects.toBeInstanceOf(ReportUnavailable);
   await expect(reporting.returnInfo({ report: "unknown" })).rejects.toBeInstanceOf(ReportUnavailable);
 });
+
+
+test("closeFound requires an owned found record and is safe to retry after closing", async () => {
+  const found = await reporting.create({ author: "finder", title: "Found", kind: "found", attributes });
+  const missing = await reporting.create({ author: "finder", title: "Missing", kind: "missing", attributes });
+  await expect(reporting.closeFound({ author: "outsider", report: found.report })).rejects.toBeInstanceOf(ReportUnavailable);
+  await expect(reporting.closeFound({ author: "finder", report: missing.report })).rejects.toBeInstanceOf(ReportUnavailable);
+  await reporting.closeFound({ author: "finder", report: found.report });
+  await reporting.closeFound({ author: "finder", report: found.report });
+  expect((await reporting._own({ author: "finder" })).find(r => r.report === found.report)?.open).toBe(false);
+  expect((await reporting._own({ author: "finder" })).find(r => r.report === missing.report)?.open).toBe(true);
+});
