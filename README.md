@@ -27,7 +27,7 @@ and coordinate the return of lost belongings.
 
 - [Final design document](p4-design.md)
 - [Live app](https://backtrack.mit-sdg.dev/)
-- [Final demo video](REPLACE_WITH_P4_VIDEO_URL)
+- Final narrated demo video: pending.
 - [Current concept specifications and compositions](app/design/)
 
 ### Testing and validation
@@ -36,7 +36,10 @@ and coordinate the return of lost belongings.
 - Latest full-suite results:
   [standard](app/tests/results/final-tests.txt) and
   [randomized](app/tests/results/final-tests-randomized.txt)
-- [Manual return-confirmation checklist](app/tests/manual-returns.md)
+- Browser results: [return workflow](app/tests/results/two-confirmations-browser.txt),
+  [interface checks](app/tests/results/ui-polish.txt), and
+  [confirmation feedback](app/tests/results/return-copy.txt)
+- Manual return checks completed by the author; see [validation summary](p4-design.md#validation-and-limitations).
 
 ## Setup
 
@@ -101,5 +104,4 @@ bun run preview
 
 Open http://127.0.0.1:3000. This builds and serves the Vue frontend through the
 backend, with API requests under `/api`. It uses the local database configured
-in `app/.env`; the deployed app has its own database. The preview is optional
-after deployment, but useful for checking production behavior locally.
+in `app/.env`; the deployed app has its own database.

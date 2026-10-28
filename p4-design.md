@@ -66,22 +66,28 @@ explores typography hierarchy and contrasting color for emphasis and feedback.
   saying I received my item or I returned the item. This keeps messaging primary
   and makes each participant's action explicit.
 
-## Validation, limitations, and user testing
+## Validation and limitations
 
-- **Local automated:** saved [standard](app/tests/results/final-tests.txt) and
+- **Local automated:** [standard](app/tests/results/final-tests.txt) and
   [randomized](app/tests/results/final-tests-randomized.txt) runs each report
   70 passing tests and 490 assertions. Coverage includes concept isolation,
-  ownership, compatibility, concurrency, persistence across instances, and
-  recovery after injected failures. These runs include both confirmation orders and automatic linked-record closure.
-- **Local browser versus mocked UI:** the latest [two-account browser journey](app/tests/results/two-confirmations-browser.txt)
-  used real endpoints and an isolated temporary database, verifying both orders,
-  closure, reload persistence, and messaging. At 1280/360/320px it found no overflow
-  or automated WCAG A/AA violations. Earlier [cleanup checks](app/tests/results/ui-cleanup.txt)
-  used mocked responses. Neither establishes deployed behavior.
-- **Limitations/readiness:** compatibility suggests candidates, not verified
-  ownership; participants assess claims through conversation. There are no
-  background match alerts, reopening, or deletion. Latest deployed persistence,
-  access-control, and error-handling checks still need verification, and the
-  P4 narrated video is pending. Before P5, check the live journey with owner/finder/outsider accounts and
-  plausible data, then observe whether new users can find matches and confirm
-  returns without guidance. No usability outcomes are claimed yet.
+  ownership, compatibility, concurrent confirmations, persistence across
+  instances, automatic linked-record closure, and recovery after failures.
+- **Browser checks:** the [two-account journey](app/tests/results/two-confirmations-browser.txt)
+  used real local endpoints and an isolated temporary database, verifying both
+  confirmation orders, closure, reload persistence, and continued messaging.
+  Checks at 1280/360/320px found no overflow or automated WCAG A/AA violations.
+  The latest [confirmation-feedback checks](app/tests/results/return-copy.txt)
+  used mocked responses to verify concise states and the finder-only points
+  banner. These results are local, not deployed test evidence.
+- **Manual verification:** the author completed the return-workflow checks,
+  covering both confirmation orders, point limits, linked versus unrelated
+  records, persistence, restricted access, competing finders, manual closure,
+  and existing conversations. The test environment was not recorded here;
+  no additional deployed results or user-study findings are claimed.
+- **Limitations:** compatibility suggests candidates, not verified ownership;
+  participants assess claims through conversation. There are no background
+  match alerts, reopening, or deletion. Conversations without an explicit saved
+  association cannot automatically close a found record. Whether new users can
+  discover saved matches and complete returns without guidance remains a
+  usability question; points have not been shown to improve participation.

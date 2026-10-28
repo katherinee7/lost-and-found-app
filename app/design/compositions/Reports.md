@@ -99,3 +99,8 @@ Both lists initially show open records only. Show closed includes closed records
 without changing stored data. After manual closure, feedback explains how to view
 the closed record. Page introductions use one short description; privacy and
 return-confirmation guidance remain next to the relevant actions.
+
+Routine create, edit, close, and finder-save success feedback clears after six
+seconds once requests finish. Errors and successful writes followed by failed
+refreshes remain visible; they distinguish persisted changes from stale lists.
+Closing returns focus to the records heading when its action disappears.

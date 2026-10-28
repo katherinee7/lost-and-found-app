@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref } from "vue";
 import { client } from "../client";
+import { useTransientSuccess } from "../composables/useTransientSuccess";
 import ReportFields from "./ReportFields.vue";
 import { attributesFromFields, emptyReportFields, prefillReport, type ReportAttributes as Attributes } from "../report-form";
 
@@ -43,6 +44,7 @@ const visibleReports = computed(() =>
 const busy = ref(false);
 const message = ref("");
 const messageError = ref(false);
+useTransientSuccess(message, messageError, busy);
 const hasLoaded = ref(false);
 
 async function load() {
@@ -99,8 +101,13 @@ async function submit() {
 
     Object.assign(fields, emptyReportFields());
 
-    await load();
-    message.value = "Report created.";
+    try {
+      await load();
+      message.value = "Report created.";
+    } catch {
+      messageError.value = true;
+      message.value = "Report created, but the list could not refresh. Refresh reports to see it.";
+    }
   } catch (error) {
     messageError.value = true;
     message.value =
@@ -163,6 +170,7 @@ async function saveEdit() {
     await load();
   } catch {
     matchesByReport.value = {};
+    messageError.value = true;
     message.value = "Changes saved, but the list could not refresh. Refresh to see the latest results.";
   } finally {
     busy.value = false;
@@ -206,14 +214,21 @@ async function closeReport(report: string) {
     if ("error" in result) {
       throw new Error(`Could not close report: ${result.error}`);
     }
-    await load();
-    message.value = showClosed.value ? "Report closed." : "Report closed. Select Show closed to view it.";
+    try {
+      await load();
+      message.value = showClosed.value ? "Report closed." : "Report closed. Select Show closed to view it.";
+    } catch {
+      messageError.value = true;
+      message.value = "Report closed, but the list could not refresh. Refresh to see the latest records.";
+    }
   } catch (error) {
     messageError.value = true;
     message.value =
       error instanceof Error ? error.message : "Could not close report.";
   } finally {
     busy.value = false;
+    await nextTick();
+    document.getElementById("records-heading")?.focus();
   }
 }
 

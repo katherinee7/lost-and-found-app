@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, reactive, ref } from "vue";
 import { client } from "../client";
+import { useTransientSuccess } from "../composables/useTransientSuccess";
 import type { ReportAttributes } from "../report-form";
 import ReportFields from "./ReportFields.vue";
 import MyReports from "./MyReports.vue";
@@ -43,6 +44,7 @@ const searched = ref(false);
 const message = ref("");
 const saving = ref(false);
 const messageError = ref(false);
+useTransientSuccess(message, messageError, busy);
 const searching = ref(false);
 
 function split(value: string) {
