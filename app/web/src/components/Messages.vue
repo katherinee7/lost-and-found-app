@@ -200,14 +200,13 @@ onUnmounted(() => {
   <section>
     <header class="page-heading">
       <h2 tabindex="-1">Messages</h2>
-      <p>Compare details and arrange a return.</p>
     </header>
     <p v-if="error" class="status error" role="alert">{{ error }}</p>
     <div class="message-layout">
       <section class="panel" aria-labelledby="conversations-title" :aria-busy="!listLoaded && !error">
         <div class="section-heading"><h3 id="conversations-title">Conversations</h3><button class="quiet" @click="refresh">Refresh</button></div>
         <p v-if="!listLoaded && !error" class="loading" role="status">Loading conversations…</p>
-        <div v-else-if="listLoaded && !error && conversations.length === 0" class="empty-state"><strong>No conversations yet.</strong>Contact an owner from a search result or saved-record match to start one.</div>
+        <div v-else-if="listLoaded && !error && conversations.length === 0" class="empty-state"><strong>No conversations yet.</strong>Contact an owner from a match.</div>
         <ul class="conversation-list">
           <li v-for="conversation in conversations" :key="conversation.conversation">
             <button :disabled="busy" :aria-pressed="selected === conversation.conversation" @click="openConversation(conversation.conversation)">
@@ -221,7 +220,7 @@ onUnmounted(() => {
         <template v-if="selected">
           <header class="thread-header"><h3 ref="threadHeading" tabindex="-1">{{ currentConversation?.title ?? "Conversation" }}</h3><p class="hint">With {{ currentConversation?.username ?? "your conversation partner" }}</p></header>
           <p v-if="reading" class="loading" role="status">Loading messages…</p>
-          <div v-else-if="!error && messages.length === 0" class="empty-state"><strong>Start with a detail.</strong>Ask about the item to help confirm it belongs to the owner before arranging a handoff.</div>
+          <div v-else-if="!error && messages.length === 0" class="empty-state"><strong>No messages yet.</strong>Ask about identifying details before arranging a handoff.</div>
           <div v-else class="message-feed">
             <article v-for="message in messages" :key="message.id" class="message-bubble" :class="{ mine: message.sender === userId }">
               <strong>{{ message.sender === userId ? "You" : (currentConversation?.username ?? "Other participant") }}</strong>
@@ -232,13 +231,13 @@ onUnmounted(() => {
           <form class="composer" @submit.prevent="send" :aria-busy="busy">
             <label for="message">Your message</label>
             <textarea id="message" v-model="draft" maxlength="2000" rows="3" aria-describedby="message-help" required :disabled="busy || reading" />
-            <p id="message-help" class="hint">Up to 2,000 characters. Keep personal details private.</p>
+            <p id="message-help" class="hint">Up to 2,000 characters.</p>
             <p v-if="composeError" class="status error" role="alert">{{ composeError }}</p>
             <button class="primary" :disabled="busy || reading || !draft.trim()">{{ busy ? "Sending…" : "Send" }}</button>
           </form>
           <ReturnConfirmation :key="selected" ref="returnPanel" :session="session" :conversation="selected" @updated="emit('return-updated')" />
         </template>
-        <div v-else class="empty-state"><strong>A conversation starts with a match.</strong>Choose a conversation to read and reply.</div>
+        <div v-else class="empty-state"><strong>Select a conversation.</strong></div>
       </section>
     </div>
   </section>

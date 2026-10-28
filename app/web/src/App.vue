@@ -210,7 +210,6 @@ function showConversation(conversation: string) {
         </section>
         <section class="panel" aria-labelledby="auth-title" :aria-busy="busy">
           <h2 id="auth-title">{{ mode === "login" ? "Welcome back" : "Join Backtrack" }}</h2>
-          <p class="hint">{{ mode === "login" ? "Log in to your reports and conversations." : "Create an account to get started." }}</p>
           <form @submit.prevent="submit">
             <div class="field"><label>Username
               <input v-model="username" autocomplete="username" pattern="[A-Za-z0-9_-]{3,32}"

@@ -96,11 +96,15 @@ reopening is unavailable, and no return or points are confirmed. Cancel sends no
 request; accepting uses the existing authenticated close endpoint.
 
 Both lists initially show open records only. Show closed includes closed records
-without changing stored data. After manual closure, feedback explains how to view
-the closed record. Page introductions use one short description; privacy and
-return-confirmation guidance remain next to the relevant actions.
+without changing stored data. Feedback confirms manual closure without repeating
+filter instructions. Page headings identify each task; privacy and confirmation
+guidance remain next to the relevant actions.
 
 Routine create, edit, close, and finder-save success feedback clears after six
 seconds once requests finish. Errors and successful writes followed by failed
 refreshes remain visible; they distinguish persisted changes from stale lists.
 Closing returns focus to the records heading when its action disappears.
+
+UI copy omits instructions that repeat visible controls (such as Show closed),
+repeated page introductions, and per-record closed-state explanations. Privacy,
+timezone, snapshot-count information, validation, and closure consequences remain.

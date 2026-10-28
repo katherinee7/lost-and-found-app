@@ -27,7 +27,7 @@ and coordinate the return of lost belongings.
 
 - [Final design document](p4-design.md)
 - [Live app](https://backtrack.mit-sdg.dev/)
-- Final narrated demo video: pending.
+- [Final demo video](https://youtu.be/h6u30okTuP4)
 - [Current concept specifications and compositions](app/design/)
 
 ### Testing and validation

@@ -193,7 +193,6 @@ async function contactOwner(report: string) {
   <section>
     <header class="page-heading">
       <h2 tabindex="-1">Find an Owner</h2>
-      <p>Search for an owner or save a found item for later.</p>
     </header>
     <div class="segmented" role="group" aria-label="Find an Owner sections">
       <button :aria-pressed="section === 'search'" @click="showSection('search')">Search for an owner</button>
@@ -218,8 +217,8 @@ async function contactOwner(report: string) {
       <section aria-labelledby="results-heading" :aria-busy="searching">
         <div class="section-heading"><h3 id="results-heading">Potential owners</h3><span v-if="searched" class="badge">{{ matches.length }} results</span></div>
         <p v-if="searching" class="loading" role="status">Looking for compatible missing reports…</p>
-        <div v-else-if="!searched" class="empty-state"><strong>Your search starts here.</strong>Enter the item’s characteristics and search to see potential owners.</div>
-        <div v-else-if="matches.length === 0" class="empty-state"><strong>No matches right now.</strong>Save this item for later, then check your saved records when new reports arrive.</div>
+        <div v-else-if="!searched" class="empty-state"><strong>No search yet.</strong></div>
+        <div v-else-if="matches.length === 0" class="empty-state"><strong>No matches right now.</strong>Save for later to check again.</div>
         <div v-else class="result-list">
           <article v-for="match in matches" :key="match.report" class="record-card">
             <div class="record-header"><h4>{{ match.title }}</h4><span class="badge">Missing</span></div>

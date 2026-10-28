@@ -59,7 +59,7 @@ explores typography hierarchy and contrasting color for emphasis and feedback.
   in the study; the final working interface uses text and cards for readability.
 - **Adjusted:** My Missing Reports now focuses on missing items; Find an Owner
   contains search and Saved found items. This follows intent instead of grouping
-  everything under My Reports. Short descriptions replace repeated introductions.
+  everything under My Reports. Task headings replace repeated introductions.
 - **Reduced distractions:** Show closed hides completed work initially. Closing
   requires a cancellable dialog explaining its consequences. Return confirmation
   is collapsed below the reply box, with a visible next-actor status and buttons

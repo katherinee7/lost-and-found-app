@@ -24,7 +24,7 @@ const categories = [
     <label>Brand <small>(optional)</small>
       <input v-model="fields.brand" maxlength="100" placeholder="e.g. Casio" />
     </label>
-    <p :id="hintId" class="hint wide">When might the item have been lost? Use a broader interval if you’re unsure. Times are in your local timezone.</p>
+    <p :id="hintId" class="hint wide">Possible loss interval · Your local timezone.</p>
     <label>Earliest possible loss
       <input v-model="fields.start" type="datetime-local" step="any" :aria-describedby="hintId" required />
     </label>

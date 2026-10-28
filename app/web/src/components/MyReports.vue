@@ -216,7 +216,7 @@ async function closeReport(report: string) {
     }
     try {
       await load();
-      message.value = showClosed.value ? "Report closed." : "Report closed. Select Show closed to view it.";
+      message.value = "Report closed.";
     } catch {
       messageError.value = true;
       message.value = "Report closed, but the list could not refresh. Refresh to see the latest records.";
@@ -304,7 +304,6 @@ onMounted(async () => {
     </dialog>
     <header v-if="kind === 'missing'" class="page-heading">
       <h2 tabindex="-1">My Missing Reports</h2>
-      <p>Report a missing item and manage your reports.</p>
       <a class="mobile-record-jump" href="#records-heading">Jump to your records ↓</a>
     </header>
     <p v-if="message" class="status" :class="{ error: messageError }" :role="messageError ? 'alert' : 'status'">{{ message }}</p>
@@ -328,11 +327,10 @@ onMounted(async () => {
       <section aria-labelledby="records-heading">
         <div class="section-heading"><h3 id="records-heading" tabindex="-1">{{ kind === "found" ? "Saved found items" : "Your reports" }}</h3><button :disabled="busy || !!editing" @click="refresh">{{ kind === "found" ? "Refresh matches" : "Refresh reports" }}</button></div>
         <label class="closed-filter"><input v-model="showClosed" type="checkbox" :disabled="busy || !!editing" /> Show closed</label>
-        <p v-if="kind === 'found'" class="hint">Private to you. Matches update when you open this section or select Refresh matches.</p>
+        <p v-if="kind === 'found'" class="hint">Private to you. Match counts reflect the latest refresh.</p>
         <p v-if="busy" class="loading" role="status">{{ kind === "found" ? "Updating your saved items and matches…" : "Updating your missing reports…" }}</p>
         <div v-else-if="hasLoaded && !messageError && visibleReports.length === 0" class="empty-state">
           <strong>{{ ownReports.length ? "No open reports." : kind === "found" ? "No saved found items yet." : "No missing reports yet." }}</strong>
-          {{ ownReports.length ? "Select Show closed to view previous reports." : kind === "found" ? "Search and choose Save for later to keep an item here." : "Create your first private missing report." }}
         </div>
         <div class="records">
           <article v-for="report in visibleReports" :key="report.report" class="record-card">
@@ -352,7 +350,7 @@ onMounted(async () => {
                   <button :aria-expanded="!!expanded[report.report]" :aria-controls="`matches-${report.report}`" @click="expanded[report.report] = !expanded[report.report]">{{ expanded[report.report] ? "Hide matches" : "View matches" }}</button>
                 </div>
                 <div v-if="expanded[report.report]" :id="`matches-${report.report}`">
-                  <p v-if="matchesByReport[report.report]!.length === 0" class="hint">No current matches. Refresh later to check again.</p>
+                  <p v-if="matchesByReport[report.report]!.length === 0" class="hint">No matches yet.</p>
                   <article v-for="match in matchesByReport[report.report]" :key="match.report" class="match-card">
                     <h5>{{ match.title }}</h5><p>{{ match.category }}</p><p>{{ formatTime(match.start) }} – {{ formatTime(match.end) }}</p><p>{{ match.locations.join(", ") || "Location unspecified" }}</p>
                     <div class="actions"><button :disabled="busy || !!editing" :aria-label="`Contact owner about ${match.title}`" @click="contactOwner(match.report, report.report)">Contact owner</button></div>
@@ -365,7 +363,6 @@ onMounted(async () => {
               <button :id="`edit-${report.report}`" :disabled="busy || !!editing" :aria-label="`Edit ${report.title}`" @click="startEditing(report)">Edit</button>
               <button class="quiet danger" :disabled="busy || !!editing" :aria-label="`Close report: ${report.title}`" @click="requestClose(report)">Close report</button>
             </div>
-            <p v-else class="hint" style="margin-top: 16px">Closed · Read-only. Conversations remain in Messages.</p>
           </article>
         </div>
       </section>
