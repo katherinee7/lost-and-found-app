@@ -30,6 +30,11 @@ and coordinate the return of lost belongings.
 - [Final demo video](https://youtu.be/h6u30okTuP4)
 - [Current concept specifications and compositions](app/design/)
 
+## P5 — User testing
+
+- [Task list, study reports, and design findings](p5.md)
+- [Deployed Backtrack app](https://backtrack.mit-sdg.dev/)
+
 ### Testing and validation
 
 - [Automated tests](app/tests/)
